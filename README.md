@@ -50,7 +50,7 @@ edition = "2021"
 
 [dependencies]
 lib = { path = "../lib" }
-hot-lib-reloader = { path = "../../../hot-lib-reloader", optional = true }
+hot-lib-reloader = { version = "*", optional = true }
 
 [features]
 default = []
