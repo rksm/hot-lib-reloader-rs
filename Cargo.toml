@@ -1,0 +1,8 @@
+[package]
+name = "hot-lib-reloader"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libloading = { version = "^0.7" }
+notify = { version = "^4" }
