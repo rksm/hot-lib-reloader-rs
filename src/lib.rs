@@ -1,10 +1,16 @@
 use libloading::Library;
 use libloading::Symbol;
+use notify::watcher;
+use notify::DebouncedEvent;
+use notify::RecursiveMode;
 use notify::Watcher;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 use std::sync::{atomic, mpsc, Arc};
+use std::thread;
+use std::time::Duration;
+use std::time::Instant;
 
 pub struct LibReloader {
     changed: Arc<atomic::AtomicBool>,
@@ -62,7 +68,7 @@ impl LibReloader {
 
         // step 2: load the new lib file and close the old one
         println!(
-            "reloading lib {} from file {new_lib_file:?}",
+            "[hot-lib-reloader] reloading lib {} from file {new_lib_file:?}",
             self.lib_file.display()
         );
         self.lib = unsafe { Library::new(&new_lib_file) }?;
@@ -82,33 +88,63 @@ impl LibReloader {
     /// Watch for changes of `lib_file`.
     fn watch(&self, lib_file: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
         let lib_file = lib_file.as_ref().to_path_buf();
-        println!("start watching changes of file {}", lib_file.display());
+        println!(
+            "[hot-lib-reloader] start watching changes of file {}",
+            lib_file.display()
+        );
 
         let changed = self.changed.clone();
-        std::thread::spawn(move || {
+        thread::spawn(move || {
+            use DebouncedEvent::*;
+
             let (tx, rx) = mpsc::channel();
-            let debounce = std::time::Duration::from_millis(300);
-            let mut watcher = notify::watcher(tx, debounce).unwrap();
+            let debounce = Duration::from_millis(300);
+            let mut last_change = Instant::now() - debounce;
+            let mut signal_change = || {
+                let now = Instant::now();
+                if now - last_change > debounce {
+                    // println!("[hot-lib-reloader] {} changed", lib_file.display());
+                    last_change = now;
+                    changed.store(true, Ordering::Relaxed);
+                }
+            };
+            let mut watcher = watcher(tx, Duration::from_millis(50)).unwrap();
+            watcher
+                .watch(&lib_file, RecursiveMode::NonRecursive)
+                .expect("watch lib file");
 
             loop {
-                watcher
-                    .watch(&lib_file, notify::RecursiveMode::NonRecursive)
-                    .unwrap();
-
                 match rx.recv() {
-                    Ok(_changed_event) => {
-                        // on macos we can run into endless change loops unless
-                        // we debounce after creation as well
-                        watcher.unwatch(&lib_file).unwrap();
-                        std::thread::sleep(debounce);
-                        watcher
-                            .watch(&lib_file, notify::RecursiveMode::NonRecursive)
-                            .unwrap();
-                        changed.store(true, Ordering::Relaxed);
+                    Ok(Chmod(_) | Create(_) | Write(_)) => {
+                        signal_change();
                     }
-
+                    Ok(Remove(_)) => {
+                        // just one hard link removed?
+                        if !lib_file.exists() {
+                            println!(
+                                "[hot-lib-reloader] {} was removed, trying to watch it again...",
+                                lib_file.display()
+                            );
+                        }
+                        loop {
+                            if watcher
+                                .watch(&lib_file, RecursiveMode::NonRecursive)
+                                .is_ok()
+                            {
+                                // println!("[hot-lib-reloader] watching {}", lib_file.display());
+                                signal_change();
+                                break;
+                            }
+                            thread::sleep(debounce);
+                        }
+                    }
+                    Ok(_change) => {
+                        // dbg!(change);
+                    }
                     Err(err) => {
-                        eprintln!("file watcher error, stopping reload loop: {err}");
+                        eprintln!(
+                            "[hot-lib-reloader] file watcher error, stopping reload loop: {err}"
+                        );
                         break;
                     }
                 }
