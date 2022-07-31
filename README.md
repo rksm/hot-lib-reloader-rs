@@ -1,4 +1,4 @@
-# Rust hot lib-reloader
+# hot-lib-reloader
 
 A simple crate around [libloading](https://crates.io/crates/libloading) that can be used to watch Rust libraries (dylibs) and will reload them again when they have changed.
 Useful for changing code and seeing the effects without having to restart the app.
@@ -100,3 +100,5 @@ cargo watch -w crates/bin -x 'run --features reload'
 ```
 
 A change that you now make to `crates/lib/lib.rs` will have an immediate effect on the app.
+
+License: MIT
