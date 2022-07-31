@@ -8,11 +8,11 @@ repository = "https://github.com/rksm/hot-lib-reloader-rs"
 readme = "README.md"
 keywords = ["hot-reloading", "hot-reload", "autoreload", "live-programming"]
 categories = ["development-tools"]
-
-[package]
+license = "MIT"
 exclude = [
   ".dir-locals.el",
 ]
+
 
 [dependencies]
 libloading = { version = "^0.7" }
