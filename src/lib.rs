@@ -7,6 +7,7 @@ use notify::Watcher;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
+use std::sync::Mutex;
 use std::sync::{atomic, mpsc, Arc};
 use std::thread;
 use std::time::Duration;
@@ -14,6 +15,7 @@ use std::time::Instant;
 
 pub struct LibReloader {
     changed: Arc<atomic::AtomicBool>,
+    changed_at: Arc<Mutex<Option<Instant>>>,
     lib: Library,
     lib_file: PathBuf,
     last_loaded_lib_file: Option<PathBuf>,
@@ -36,6 +38,7 @@ impl LibReloader {
             lib,
             last_loaded_lib_file: None,
             changed: Arc::new(atomic::AtomicBool::new(false)),
+            changed_at: Arc::new(Mutex::new(None)),
             reload_counter: 0,
         };
 
@@ -48,6 +51,8 @@ impl LibReloader {
         if self.changed.load(Ordering::Relaxed) {
             self.changed.store(false, Ordering::Relaxed);
             self.reload()?;
+            let mut changed_at = self.changed_at.lock().unwrap();
+            *changed_at = Some(Instant::now());
         }
         Ok(())
     }
@@ -88,25 +93,37 @@ impl LibReloader {
     /// Watch for changes of `lib_file`.
     fn watch(&self, lib_file: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
         let lib_file = lib_file.as_ref().to_path_buf();
-        println!(
+        log::info!(
             "[hot-lib-reloader] start watching changes of file {}",
             lib_file.display()
         );
 
         let changed = self.changed.clone();
+        let last_changed = self.changed_at.clone();
         thread::spawn(move || {
             use DebouncedEvent::*;
 
             let (tx, rx) = mpsc::channel();
-            let debounce = Duration::from_millis(300);
+            let debounce = Duration::from_millis(500);
             let mut last_change = Instant::now() - debounce;
             let mut signal_change = || {
                 let now = Instant::now();
-                if now - last_change > debounce {
-                    // println!("[hot-lib-reloader] {} changed", lib_file.display());
-                    last_change = now;
-                    changed.store(true, Ordering::Relaxed);
+
+                if last_changed
+                    .try_lock()
+                    .ok()
+                    .and_then(|t| *t)
+                    .map(|t| now - t < debounce)
+                    .unwrap_or(false)
+                {
+                    return;
                 }
+
+                log::debug!("[hot-lib-reloader] {} changed", lib_file.display());
+
+                last_change = now;
+                changed.store(true, Ordering::Relaxed);
+                last_changed.lock().unwrap().replace(Instant::now());
             };
             let mut watcher = watcher(tx, Duration::from_millis(50)).unwrap();
             watcher
@@ -121,7 +138,7 @@ impl LibReloader {
                     Ok(Remove(_)) => {
                         // just one hard link removed?
                         if !lib_file.exists() {
-                            println!(
+                            log::debug!(
                                 "[hot-lib-reloader] {} was removed, trying to watch it again...",
                                 lib_file.display()
                             );
@@ -131,7 +148,7 @@ impl LibReloader {
                                 .watch(&lib_file, RecursiveMode::NonRecursive)
                                 .is_ok()
                             {
-                                // println!("[hot-lib-reloader] watching {}", lib_file.display());
+                                log::info!("[hot-lib-reloader] watching {}", lib_file.display());
                                 signal_change();
                                 break;
                             }
@@ -142,7 +159,7 @@ impl LibReloader {
                         // dbg!(change);
                     }
                     Err(err) => {
-                        eprintln!(
+                        log::error!(
                             "[hot-lib-reloader] file watcher error, stopping reload loop: {err}"
                         );
                         break;
