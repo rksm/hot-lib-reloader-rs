@@ -52,7 +52,7 @@ edition = "2021"
 
 [dependencies]
 lib = { path = "../lib" }
-hot-lib-reloader = { version = "*", optional = true }
+hot-lib-reloader = "0.3.0"
 ```
 
 You can then define and use the lib reloader like so:
