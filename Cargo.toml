@@ -1,6 +1,6 @@
 [package]
 name = "hot-lib-reloader"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Utility to reload libraries on change. For faster feedback cycles."
 homepage = "https://github.com/rksm/hot-lib-reloader-rs"
