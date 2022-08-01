@@ -63,7 +63,6 @@ hot_lib_reloader::define_lib_reloader!(
     }
 );
 
-
 fn main() {
     let mut lib = MyLibLoader::new().expect("init lib loader");
 
