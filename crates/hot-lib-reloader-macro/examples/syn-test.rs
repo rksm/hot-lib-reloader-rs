@@ -1,9 +1,7 @@
 fn main() {
     if true {
         let content = r#"
-impl Foo {
-  fn xxx(&self) {}
-}
+fn xxx(loader: Res<BevyLibLoader>) {}
 "#;
         let ast = syn::parse_file(content).unwrap();
         dbg!(ast);

@@ -1,9 +1,12 @@
 #![feature(proc_macro_span)]
 
+mod bevy_system_functions;
 mod generate_libreloader_struct;
 mod parse_definition;
 mod types;
+mod util;
 
+use bevy_system_functions::generate_bevy_system_functions;
 use generate_libreloader_struct::generate_lib_reloader_struct;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
@@ -26,6 +29,7 @@ use crate::{
 ///         fn test<'a>(arg1: &'a str, arg2: u8) -> String;
 ///     },
 ///     source_files: ["path/to/lib.rs"],
+///     generate_bevy_systems: true
 /// }
 /// ```
 impl parse::Parse for LibReloaderDefinition {
@@ -54,6 +58,12 @@ impl parse::Parse for LibReloaderDefinition {
                 parse_field(Field::LibName, &field_stream, &mut pending)?;
             } else if field_name == "functions" {
                 parse_field(Field::Functions, &field_stream, &mut pending)?;
+            } else if field_name == "generate_bevy_systems" {
+                parse_field(
+                    Field::GenerateBevySystemFunctions,
+                    &field_stream,
+                    &mut pending,
+                )?;
             } else if field_name == "source_files" {
                 parse_field(Field::SourceFiles, &field_stream, &mut pending)?;
             } else {
@@ -74,6 +84,9 @@ impl quote::ToTokens for LibReloaderDefinition {
         // shouldn't actually be able to error so when things are stable we should
         // consider to put `generate_lib_reloader_struct` here again.
         proc_macro2::TokenStream::append_all(tokens, self.struct_def.clone());
+        if let Some(bevy_systems) = &self.bevy_system_functions {
+            proc_macro2::TokenStream::append_all(tokens, bevy_systems.clone());
+        }
     }
 }
 
@@ -84,6 +97,7 @@ impl PendingLibReloaderDefinition {
             lib_dir,
             lib_name,
             lib_functions,
+            generate_bevy_system_functions: bevy_system_functions_flag,
         } = self;
 
         let name = match name {
@@ -107,9 +121,14 @@ impl PendingLibReloaderDefinition {
             Some(lib_name) => lib_name,
         };
 
+        let bevy_system_functions =
+            generate_bevy_system_functions(bevy_system_functions_flag, &lib_functions, &name)?;
         let struct_def = generate_lib_reloader_struct(name, lib_dir, lib_name, lib_functions)?;
 
-        Ok(LibReloaderDefinition { struct_def })
+        Ok(LibReloaderDefinition {
+            struct_def,
+            bevy_system_functions,
+        })
     }
 }
 

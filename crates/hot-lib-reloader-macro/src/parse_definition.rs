@@ -1,7 +1,8 @@
 use proc_macro2::Span;
 use std::path::PathBuf;
 use syn::{
-    braced, bracketed, parse::ParseBuffer, spanned::Spanned, Error, ForeignItemFn, LitStr, Result,
+    braced, bracketed, parse::ParseBuffer, spanned::Spanned, Error, ForeignItemFn, LitBool, LitStr,
+    Result,
 };
 
 use crate::types::{Field, PendingLibReloaderDefinition};
@@ -36,6 +37,9 @@ pub(crate) fn parse_field(
                 def.lib_functions
                     .extend(parse_functions_from_file(file_name)?);
             }
+        }
+        Field::GenerateBevySystemFunctions => {
+            def.generate_bevy_system_functions = Some(stream.parse::<LitBool>()?);
         }
     }
 

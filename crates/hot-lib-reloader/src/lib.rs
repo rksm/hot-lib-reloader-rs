@@ -299,8 +299,8 @@ impl LibReloader {
                             thread::sleep(debounce);
                         }
                     }
-                    Ok(_change) => {
-                        // dbg!(change);
+                    Ok(change) => {
+                        log::trace!("file change event: {change:?}");
                     }
                     Err(err) => {
                         log::error!(

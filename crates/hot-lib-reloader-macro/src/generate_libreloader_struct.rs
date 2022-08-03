@@ -1,15 +1,17 @@
-use proc_macro2::Span;
+use proc_macro2::{Span, TokenStream};
 use syn::{
-    parse_quote, token, Error, FnArg, ForeignItemFn, Ident, ImplItemMethod, LitByteStr, LitStr,
-    Receiver, Result, VisPublic, Visibility,
+    parse_quote, token, FnArg, ForeignItemFn, Ident, ImplItemMethod, LitByteStr, LitStr, Receiver,
+    Result, VisPublic, Visibility,
 };
+
+use crate::util::ident_from_pat;
 
 pub fn generate_lib_reloader_struct(
     name: Ident,
     lib_dir: LitStr,
     lib_name: LitStr,
     lib_functions: Vec<(ForeignItemFn, Span)>,
-) -> Result<proc_macro2::TokenStream> {
+) -> Result<TokenStream> {
     let mut lib_function_methods = Vec::with_capacity(lib_functions.len());
     for func in lib_functions {
         lib_function_methods.push(generate_impl_method_to_call_lib_function(func)?);
@@ -115,20 +117,6 @@ fn generate_impl_method_to_call_lib_function(
         sig,
         block,
     })
-}
-
-fn ident_from_pat(
-    pat: &syn::Pat,
-    func_name: &proc_macro2::Ident,
-    span: proc_macro2::Span,
-) -> Result<Ident> {
-    match pat {
-        syn::Pat::Ident(pat) => Ok(pat.ident.clone()),
-        _ => Err(Error::new(
-            span,
-            format!("generating call for library function: signature of function {func_name} cannot be converted"),
-        )),
-    }
 }
 
 #[cfg(test)]
