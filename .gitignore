@@ -3,3 +3,4 @@ Cargo.lock
 /.dir-locals.el
 DEV.org
 *.org
+examples/bevy-extended/
