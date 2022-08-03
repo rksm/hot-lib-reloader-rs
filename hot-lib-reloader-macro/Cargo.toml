@@ -1,7 +1,13 @@
 [package]
 name = "hot-lib-reloader-macro"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2021"
+homepage = "https://github.com/rksm/hot-lib-reloader-rs"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/rksm/hot-lib-reloader-rs"
+description = "Macro crate for hot-lib-reloader"
+
 
 [lib]
 proc-macro = true
