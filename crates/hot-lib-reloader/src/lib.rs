@@ -147,6 +147,12 @@ impl LibReloader {
         lib_dir: impl AsRef<Path>,
         lib_name: impl AsRef<str>,
     ) -> Result<Self, Box<dyn Error>> {
+        // find the target dir in which the build is happening and where we should find
+        // the library
+        let lib_dir = find_file_or_dir_in_parent_directories(lib_dir.as_ref())?;
+        log::debug!("found lib dir at {lib_dir:?}");
+
+        // sort out os dependent file name
         #[cfg(target_os = "macos")]
         let (prefix, ext) = ("lib", "dylib");
         #[cfg(target_os = "linux")]
@@ -154,15 +160,21 @@ impl LibReloader {
         #[cfg(target_os = "windows")]
         let (prefix, ext) = ("", "dll");
         let lib_name = format!("{prefix}{}", lib_name.as_ref());
-        let watched_lib_file = lib_dir.as_ref().join(&lib_name).with_extension(ext);
+
+        let watched_lib_file = lib_dir.join(&lib_name).with_extension(ext);
         let loaded_lib_file = lib_dir
-            .as_ref()
             .join(format!("{lib_name}-hot"))
             .with_extension("dll");
-        // We don't load the actual lib because this can get problems e.g. on Windows
-        // where a file lock would be held, preventing the lib from changing later.
-        std::fs::copy(&watched_lib_file, &loaded_lib_file)?;
-        let lib = Some(unsafe { Library::new(&loaded_lib_file) }?);
+
+        let lib = if watched_lib_file.exists() {
+            // We don't load the actual lib because this can get problems e.g. on Windows
+            // where a file lock would be held, preventing the lib from changing later.
+            std::fs::copy(&watched_lib_file, &loaded_lib_file)?;
+            Some(unsafe { Library::new(&loaded_lib_file) }?)
+        } else {
+            log::debug!("library {watched_lib_file:?} does not yet exist");
+            None
+        };
 
         let lib_loader = Self {
             watched_lib_file: watched_lib_file.clone(),
@@ -205,8 +217,13 @@ impl LibReloader {
         if let Some(lib) = lib.take() {
             lib.close()?;
         }
-        std::fs::copy(watched_lib_file, loaded_lib_file)?;
-        self.lib = Some(unsafe { Library::new(&self.loaded_lib_file) }?);
+
+        if watched_lib_file.exists() {
+            std::fs::copy(watched_lib_file, loaded_lib_file)?;
+            self.lib = Some(unsafe { Library::new(&self.loaded_lib_file) }?);
+        } else {
+            log::warn!("trying to reload library but it does not exist");
+        }
 
         Ok(())
     }
@@ -318,5 +335,36 @@ impl Drop for LibReloader {
         if self.loaded_lib_file.exists() {
             let _ = std::fs::remove_file(&self.loaded_lib_file);
         }
+    }
+}
+
+/// Try to find that might be a relative path such as `target/debug/` by walking
+/// up the directories, starting from cwd. This helps finding the lib when the
+/// app was started from a directory that is not the project/workspace root.
+fn find_file_or_dir_in_parent_directories(
+    file: impl AsRef<Path>,
+) -> Result<PathBuf, Box<dyn Error>> {
+    let mut file = file.as_ref().to_path_buf();
+    if !file.exists() && file.is_relative() {
+        if let Ok(cwd) = std::env::current_dir() {
+            let mut parent_dir = Some(cwd.as_path());
+            while let Some(dir) = parent_dir {
+                if dir.join(&file).exists() {
+                    file = dir.join(&file);
+                    break;
+                }
+                parent_dir = dir.parent();
+            }
+        }
+    }
+
+    if file.exists() {
+        Ok(file)
+    } else {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("file {file:?} does not exist"),
+        )
+        .into())
     }
 }

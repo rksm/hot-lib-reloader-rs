@@ -16,3 +16,6 @@ hot-lib-reloader-macro = { path = "../hot-lib-reloader-macro" }
 libloading = { version = "^0.7" }
 log = "0.4.17"
 notify = { version = "^4" }
+
+[dev-dependencies]
+env_logger = "*"
