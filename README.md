@@ -129,6 +129,7 @@ Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/
 
 - [minimal](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/minimal): Bare-bones setup.
 - [reload-feature](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature): Use a feature to switch between dynamic and static version.
+- [bevy](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy): Shows how to hot-reload bevy systems.
 
 
 License: MIT

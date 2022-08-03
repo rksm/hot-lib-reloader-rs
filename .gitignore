@@ -1,4 +1,5 @@
 target
 Cargo.lock
 /.dir-locals.el
-/DEV.org
+DEV.org
+*.org
