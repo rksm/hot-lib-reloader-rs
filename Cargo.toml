@@ -1,21 +1,4 @@
-[package]
-name = "hot-lib-reloader"
-version = "0.3.0"
-edition = "2021"
-description = "Utility to reload libraries on change. For faster feedback cycles."
-homepage = "https://github.com/rksm/hot-lib-reloader-rs"
-repository = "https://github.com/rksm/hot-lib-reloader-rs"
-readme = "README.md"
-keywords = ["hot-reloading", "hot-reload", "autoreload", "live-programming"]
-categories = ["development-tools"]
-license = "MIT"
-exclude = [
-  ".dir-locals.el",
-]
-
-
-[dependencies]
-libloading = { version = "^0.7" }
-log = "0.4.17"
-notify = { version = "^4" }
-
+[workspace]
+resolver = "2"
+members = ["crates/hot-lib-reloader", "crates/hot-lib-reloader-macro"]
+default-members = ["crates/hot-lib-reloader"]

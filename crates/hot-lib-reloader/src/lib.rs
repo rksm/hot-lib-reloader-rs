@@ -117,8 +117,6 @@ A change that you now make to `lib/lib.rs` will have an immediate effect on the 
 
 */
 
-mod macros;
-
 use libloading::Library;
 use libloading::Symbol;
 use notify::watcher;
@@ -133,6 +131,8 @@ use std::sync::{atomic, mpsc, Arc};
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
+
+pub use hot_lib_reloader_macro::define_lib_reloader;
 
 pub struct LibReloader {
     changed: Arc<atomic::AtomicBool>,
