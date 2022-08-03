@@ -1,11 +1,14 @@
+#![feature(proc_macro_span)]
+
 mod generate_libreloader_struct;
 mod parse_definition;
 mod types;
 
 use generate_libreloader_struct::generate_lib_reloader_struct;
 use proc_macro::TokenStream;
+use proc_macro2::Span;
 use quote::{quote, TokenStreamExt};
-use syn::{braced, parse, parse_macro_input, token, Error, Ident, Result};
+use syn::{braced, parse, parse_macro_input, token, Error, Ident, LitStr, Result};
 use types::LibReloaderDefinition;
 
 use crate::{
@@ -65,13 +68,48 @@ impl parse::Parse for LibReloaderDefinition {
 
 impl quote::ToTokens for LibReloaderDefinition {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let struct_def = generate_lib_reloader_struct(
-            &self.name,
-            &self.lib_dir,
-            &self.lib_name,
-            &self.lib_functions,
-        );
-        proc_macro2::TokenStream::append_all(tokens, struct_def);
+        // We are generating the struct_def already in `try_conversion` so that we can
+        // emit errors that point to the offending part of the proc macro. This is
+        // useful for debugging but a bit less efficient. The struct generation
+        // shouldn't actually be able to error so when things are stable we should
+        // consider to put `generate_lib_reloader_struct` here again.
+        proc_macro2::TokenStream::append_all(tokens, self.struct_def.clone());
+    }
+}
+
+impl PendingLibReloaderDefinition {
+    pub(crate) fn try_conversion(self, span: Span) -> Result<LibReloaderDefinition> {
+        let Self {
+            name,
+            lib_dir,
+            lib_name,
+            lib_functions,
+        } = self;
+
+        let name = match name {
+            None => return Err(Error::new(span, "The name of the struct is missing")),
+            Some(name) => name,
+        };
+
+        let lib_dir = match lib_dir {
+            None => {
+                if cfg!(debug_assertions) {
+                    LitStr::new("target/debug", span)
+                } else {
+                    LitStr::new("target/release", span)
+                }
+            }
+            Some(lib_dir) => lib_dir,
+        };
+
+        let lib_name = match lib_name {
+            None => return Err(Error::new(span, "missing field \"lib_name\"")),
+            Some(lib_name) => lib_name,
+        };
+
+        let struct_def = generate_lib_reloader_struct(name, lib_dir, lib_name, lib_functions)?;
+
+        Ok(LibReloaderDefinition { struct_def })
     }
 }
 

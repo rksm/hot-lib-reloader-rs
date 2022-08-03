@@ -1,6 +1,8 @@
+use proc_macro2::Span;
 use std::path::PathBuf;
-
-use syn::{braced, bracketed, parse::ParseBuffer, Error, ForeignItemFn, LitStr, Result};
+use syn::{
+    braced, bracketed, parse::ParseBuffer, spanned::Spanned, Error, ForeignItemFn, LitStr, Result,
+};
 
 use crate::types::{Field, PendingLibReloaderDefinition};
 
@@ -21,17 +23,18 @@ pub(crate) fn parse_field(
             let function_stream;
             braced!(function_stream in stream);
             while !function_stream.is_empty() {
-                def.lib_functions.push(function_stream.parse()?);
+                let func: ForeignItemFn = function_stream.parse()?;
+                let span = func.span();
+                def.lib_functions.push((func, span));
             }
         }
         Field::SourceFiles => {
-            // let mut files = Vec::new();
             let file_name_stream;
             bracketed!(file_name_stream in stream);
             while !file_name_stream.is_empty() {
-                // files.push(file_name_stream.parse::<LitStr>()?)
-                let fun_declarations = parse_functions_from_file(file_name_stream.parse()?)?;
-                def.lib_functions.extend(fun_declarations);
+                let file_name = file_name_stream.parse()?;
+                def.lib_functions
+                    .extend(parse_functions_from_file(file_name)?);
             }
         }
     }
@@ -44,9 +47,19 @@ pub(crate) fn parse_field(
 /// - #[no_mangle] attribute
 /// It converts these functions into a [syn::ForeignItemFn] so that those can
 /// serve as lib function declarations of the lib reloader.
-fn parse_functions_from_file(file_name: LitStr) -> Result<Vec<ForeignItemFn>> {
+fn parse_functions_from_file(file_name: LitStr) -> Result<Vec<(ForeignItemFn, Span)>> {
     let span = file_name.span();
     let path: PathBuf = file_name.value().into();
+    let path = if path.is_relative() {
+        let file_with_macro = proc_macro::Span::call_site().source_file();
+        file_with_macro
+            .path()
+            .parent()
+            .map(|dir| dir.join(&path))
+            .unwrap_or(path)
+    } else {
+        path
+    };
 
     if !path.exists() {
         return Err(Error::new(span, format!("file does not exist: {path:?}")));
@@ -77,8 +90,6 @@ fn parse_functions_from_file(file_name: LitStr) -> Result<Vec<ForeignItemFn>> {
                     continue;
                 };
 
-                // functions.push(fun);
-
                 let fun = ForeignItemFn {
                     attrs: Vec::new(),
                     vis: fun.vis,
@@ -86,29 +97,11 @@ fn parse_functions_from_file(file_name: LitStr) -> Result<Vec<ForeignItemFn>> {
                     semi_token: syn::token::Semi(span),
                 };
 
-                functions.push(fun);
+                functions.push((fun, file_name.span()));
             }
             _ => continue,
         }
     }
-
-    // println!("{:?}", fun.block);
-
-    // let mut sig = fun.sig.clone();
-
-    // //println!("found public fun {:?}", sig.to_token_stream().to_string());
-    // //dbg!(&sig.inputs[0]);
-    // //let arg: syn::FnArg = syn::parse_str("lib: Res<LibReloader>").unwrap();
-    // let arg: syn::FnArg = syn::parse_quote! { lib: Res<LibReloader> };
-    // // let block: syn::Block = syn::parse_quote!()
-    // // dbg!(arg);
-    // //syn::FnArg::Typed()
-    // sig.inputs.insert(0, arg);
-
-    // let result = quote::quote! {
-    //     #sig
-    // };
-    // println!("{}", result);
 
     Ok(functions)
 }

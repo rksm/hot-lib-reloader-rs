@@ -1,21 +1,21 @@
 use proc_macro2::Span;
 use syn::{
-    parse_quote, token, FnArg, ForeignItemFn, Ident, ImplItemMethod, LitByteStr, LitStr, Receiver,
-    VisPublic, Visibility,
+    parse_quote, token, Error, FnArg, ForeignItemFn, Ident, ImplItemMethod, LitByteStr, LitStr,
+    Receiver, Result, VisPublic, Visibility,
 };
 
 pub fn generate_lib_reloader_struct(
-    name: &Ident,
-    lib_dir: &LitStr,
-    lib_name: &LitStr,
-    lib_functions: &[ForeignItemFn],
-) -> proc_macro2::TokenStream {
-    let lib_function_methods = lib_functions
-        .iter()
-        .map(generate_impl_method_to_call_lib_function)
-        .collect::<Vec<_>>();
+    name: Ident,
+    lib_dir: LitStr,
+    lib_name: LitStr,
+    lib_functions: Vec<(ForeignItemFn, Span)>,
+) -> Result<proc_macro2::TokenStream> {
+    let mut lib_function_methods = Vec::with_capacity(lib_functions.len());
+    for func in lib_functions {
+        lib_function_methods.push(generate_impl_method_to_call_lib_function(func)?);
+    }
 
-    quote::quote! {
+    Ok(quote::quote! {
         pub struct #name {
             lib_loader: ::hot_lib_reloader::LibReloader,
         }
@@ -36,7 +36,7 @@ pub fn generate_lib_reloader_struct(
             #( #lib_function_methods )*
         }
 
-    }
+    })
 }
 
 /// This does two things with the lib_function:
@@ -48,7 +48,9 @@ pub fn generate_lib_reloader_struct(
 /// method for the specific LibReloader struct.
 ///
 /// Those two things are then put together to create a [syn::ImplItemMethod].
-fn generate_impl_method_to_call_lib_function(lib_function: &ForeignItemFn) -> ImplItemMethod {
+fn generate_impl_method_to_call_lib_function(
+    (lib_function, span): (ForeignItemFn, Span),
+) -> Result<ImplItemMethod> {
     let ForeignItemFn { attrs, sig, .. } = lib_function;
 
     // the symbol inside the library we call needs to be a byte string
@@ -77,7 +79,7 @@ fn generate_impl_method_to_call_lib_function(lib_function: &ForeignItemFn) -> Im
             }
             FnArg::Typed(typed) => {
                 input_types.push(typed.ty.clone());
-                input_names.push(typed.pat.clone());
+                input_names.push(ident_from_pat(&typed.pat, &sig.ident, span)?);
             }
         }
     }
@@ -104,19 +106,35 @@ fn generate_impl_method_to_call_lib_function(lib_function: &ForeignItemFn) -> Im
         }),
     );
 
-    ImplItemMethod {
-        attrs: attrs.clone(),
+    Ok(ImplItemMethod {
+        attrs,
         vis: Visibility::Public(VisPublic {
             pub_token: token::Pub(Span::call_site()),
         }),
         defaultness: None,
         sig,
         block,
+    })
+}
+
+fn ident_from_pat(
+    pat: &syn::Pat,
+    func_name: &proc_macro2::Ident,
+    span: proc_macro2::Span,
+) -> Result<Ident> {
+    match pat {
+        syn::Pat::Ident(pat) => Ok(pat.ident.clone()),
+        _ => Err(Error::new(
+            span,
+            format!("generating call for library function: signature of function {func_name} cannot be converted"),
+        )),
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use syn::spanned::Spanned;
+
     use super::generate_impl_method_to_call_lib_function;
 
     #[test]
@@ -124,7 +142,8 @@ mod tests {
         let lib_function: syn::ForeignItemFn = syn::parse_quote! {
             fn xxx(state: &mut State) -> u8;
         };
-        let method = generate_impl_method_to_call_lib_function(&lib_function);
+        let span = lib_function.span();
+        let method = generate_impl_method_to_call_lib_function((lib_function, span)).unwrap();
         let output = quote::quote! { #method }.to_string();
         let expected = r#"pub fn xxx (& self , state : & mut State) -> u8 { unsafe { let f = self . lib_loader . get_symbol :: < fn (& mut State) -> u8 > (b"xxx\0") . expect ("Cannot load library function xxx") ; f (state) } }"#;
 
