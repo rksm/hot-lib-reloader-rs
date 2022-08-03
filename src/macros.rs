@@ -14,7 +14,7 @@
 /// # }
 #[macro_export]
 macro_rules! define_lib_reloader {
-    ($name:ident ( $dir:literal, $lib_name:literal ) { $(fn $rest:tt $args:tt -> $ret:ty;)* }) => {
+    (unsafe $name:ident ( $dir:literal, $lib_name:literal ) { $(fn $rest:tt $args:tt -> $ret:ty;)* }) => {
         pub struct $name {
             lib_loader: $crate::LibReloader,
         }
