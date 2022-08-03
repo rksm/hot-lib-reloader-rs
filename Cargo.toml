@@ -1,6 +1,6 @@
 [package]
 name = "hot-lib-reloader"
-version = "0.3.0"
+version = "0.4.0"
 categories = ["development-tools"]
 edition = "2021"
 exclude = [".dir-locals.el", "DEV.org"]
@@ -18,7 +18,7 @@ log = "0.4.17"
 notify = { version = "^4" }
 
 [dev-dependencies]
-env_logger = "*"
+env_logger = "^0.9"
 
 [workspace]
 resolver = "2"
