@@ -35,7 +35,7 @@ And `lib/lib.rs`
 
 ```
 #[no_mangle]
-pub extern "C" fn do_stuff() {
+pub fn do_stuff() {
     println!("doing stuff");
 }
 ```
@@ -58,11 +58,19 @@ hot-lib-reloader = "0.3.0"
 You can then define and use the lib reloader like so:
 
 ```no_run
-hot_lib_reloader::define_lib_reloader!(
-    MyLibLoader("target/debug", "lib") {
-        fn do_stuff() -> ();
+hot_lib_reloader::define_lib_reloader! {
+    unsafe MyLibLoader {
+        // Will look for "liblib.so" (Linux), "lib.dll" (Windows), ...
+        lib_name: "lib",
+        // Where to load the reloadable functions from,
+        // relative to current file:
+        source_files: ["../../lib/src/lib.rs"]
+        // You can optionally specify manually:
+        // functions: {
+        //     fn do_stuff();
+        // }
     }
-);
+}
 
 fn main() {
     let mut lib = MyLibLoader::new().expect("init lib loader");

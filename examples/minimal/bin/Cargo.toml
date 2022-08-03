@@ -1,0 +1,15 @@
+[package]
+name = "bin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+env_logger = "0.9.0"
+hot-lib-reloader = { path = "../../../crates/hot-lib-reloader", optional = true }
+lib = { path = "../lib" }
+log = "^0.4"
+
+[features]
+default = ["reload"]
+reload = ["dep:hot-lib-reloader"]
+reload_no_macro = ["dep:hot-lib-reloader"]
