@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 env_logger = "0.9.0"
-hot-lib-reloader = { path = "../../../crates/hot-lib-reloader", optional = true }
+hot-lib-reloader = { path = "../../..", optional = true }
 lib = { path = "../lib" }
 log = "^0.4"
 
