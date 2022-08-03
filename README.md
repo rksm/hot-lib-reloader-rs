@@ -1,6 +1,14 @@
 # hot-lib-reloader
 
 
+[![Crates.io](https://img.shields.io/crates/v/hot-lib-reloader)](https://crates.io/crates/hot-lib-reloader)
+[![](https://docs.rs/structopt/badge.svg)](https://docs.rs/hot-lib-reloader)
+[![License](https://img.shields.io/crates/l/hot-lib-reloader?color=informational&logo=mit)](/LICENSE.md)
+
+<!--
+[![Crates.io](https://img.shields.io/crates/d/hot-lib-reloader)](https://crates.io/crates/hot-lib-reloader)
+ -->
+
 A simple crate around [libloading](https://crates.io/crates/libloading) that can be used to watch Rust libraries (dylibs) and will reload them again when they have changed.
 Useful for changing code and seeing the effects without having to restart the app.
 
@@ -34,7 +42,7 @@ And `lib/lib.rs`
 
 ```rust
 #[no_mangle]
-pub extern "C" fn do_stuff() {
+pub fn do_stuff() {
     println!("doing stuff");
 }
 ```
@@ -51,17 +59,25 @@ edition = "2021"
 
 [dependencies]
 lib = { path = "../lib" }
-hot-lib-reloader = "0.3.0"
+hot-lib-reloader = "0.4.0"
 ```
 
 You can then define and use the lib reloader like so:
 
 ```rust
-hot_lib_reloader::define_lib_reloader!(
-    MyLibLoader("target/debug", "lib") {
-        fn do_stuff() -> ();
+hot_lib_reloader::define_lib_reloader! {
+    unsafe MyLibLoader {
+        // Will look for "liblib.so" (Linux), "lib.dll" (Windows), ...
+        lib_name: "lib",
+        // Where to load the reloadable functions from,
+        // relative to current file:
+        source_files: ["../../lib/src/lib.rs"]
+        // You can optionally specify manually:
+        // functions: {
+        //     fn do_stuff();
+        // }
     }
-);
+}
 
 fn main() {
     let mut lib = MyLibLoader::new().expect("init lib loader");
@@ -113,6 +129,15 @@ cargo watch -w bin -x run
 ```
 
 A change that you now make to `lib/lib.rs` will have an immediate effect on the app.
+
+
+## More examples
+
+Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples).
+
+- [minimal](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/minimal): Bare-bones setup.
+- [reload-feature](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature): Use a feature to switch between dynamic and static version.
+- [bevy](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy): Shows how to hot-reload bevy systems.
 
 
 License: MIT

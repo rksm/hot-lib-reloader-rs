@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0]
+### Changed
+- Reimplemented the `define_lib_reloader` macro as proc macro. It has a somewhat different syntax now (breaking change)
+### Added
+- `define_lib_reloader` now allows to load function signatures from source files
+- support for hot-reloading bevy systems
+
+
 ## [0.3.0]
 ### Added
 - Convenience macro `define_lib_reloader!`

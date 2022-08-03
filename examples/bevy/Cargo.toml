@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = ["systems"]
+
+[package]
+name = "bin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { version = "0.8.0" }
+hot-lib-reloader = { path = "../..", optional = true }
+systems = { path = "systems" }
+
+[features]
+default = ["reload"]
+reload = ["dep:hot-lib-reloader"]
