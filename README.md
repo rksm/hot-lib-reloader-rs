@@ -2,12 +2,12 @@
 
 
 [![Crates.io](https://img.shields.io/crates/v/hot-lib-reloader)](https://crates.io/crates/hot-lib-reloader)
-<!--
-[![Crates.io](https://img.shields.io/crates/d/hot-lib-reloader)](https://crates.io/crates/hot-lib-reloader)
- -->
 [![](https://docs.rs/structopt/badge.svg)](https://docs.rs/hot-lib-reloader)
 [![License](https://img.shields.io/crates/l/hot-lib-reloader?color=informational&logo=mit)](/LICENSE.md)
 
+<!--
+[![Crates.io](https://img.shields.io/crates/d/hot-lib-reloader)](https://crates.io/crates/hot-lib-reloader)
+ -->
 
 A simple crate around [libloading](https://crates.io/crates/libloading) that can be used to watch Rust libraries (dylibs) and will reload them again when they have changed.
 Useful for changing code and seeing the effects without having to restart the app.
