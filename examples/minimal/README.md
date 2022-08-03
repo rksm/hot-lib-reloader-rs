@@ -1,8 +1,8 @@
 The simplest hot reload setup. 
 
-Run it with
+Run it with:
 
 ```shell
-cargo watch -w lib -x build
-cargo watch -w bin -x run
+$ cargo watch -w lib -x build
+$ cargo watch -i lib -x run
 ```

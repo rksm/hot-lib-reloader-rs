@@ -1,7 +1,7 @@
 hot_lib_reloader::define_lib_reloader! {
     unsafe MyLibLoader {
         lib_name: "lib",
-        source_files: ["../../lib/src/lib.rs"]
+        source_files: ["../lib/src/lib.rs"]
     }
 }
 

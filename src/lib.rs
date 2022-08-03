@@ -123,6 +123,14 @@ cargo watch -w bin -x run
 
 A change that you now make to `lib/lib.rs` will have an immediate effect on the app.
 
+
+# More examples
+
+Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples).
+
+- [minimal](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/minimal): Bare-bones setup.
+- [reload-feature](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature): Use a feature to switch between dynamic and static version.
+
 */
 
 use libloading::Library;
