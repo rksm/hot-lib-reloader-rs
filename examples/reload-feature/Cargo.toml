@@ -16,4 +16,3 @@ log = "^0.4"
 [features]
 default = ["reload"]
 reload = ["dep:hot-lib-reloader"]
-reload_no_macro = ["dep:hot-lib-reloader"]
