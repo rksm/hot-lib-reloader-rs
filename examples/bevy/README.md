@@ -5,7 +5,7 @@ This example shows how to use hot-reloading with bevy.
 To run the example with hot-reload enabled run these two commands in parallel:
 
 ```shell
-$ cargo watch -w systems -x build
+$ cargo watch -w systems -x 'build -p systems'
 $ cargo watch -i systems -x 'run --features reload'
 ```
 

@@ -146,7 +146,7 @@ fn main() {
 To start compilation of the library:
 
 ```shell
-cargo watch -w lib -x build
+cargo watch -w lib -x 'build -p lib'
 ```
 
 And in addition to that start compilation of the binary with reload enabled:

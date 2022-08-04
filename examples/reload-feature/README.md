@@ -9,7 +9,7 @@ cargo watch -i lib -x 'run --features reload'
 and (re-)build the lib
 
 ```shell
-cargo watch -w lib -x build
+cargo watch -w lib -x 'build -p lib'
 ```
 
 To run with a statically compiled binary just do
