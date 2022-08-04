@@ -1,18 +1,37 @@
 This example shows how to use hot-reloading with bevy.
 
-# usage
+# Usage
+
+To run without hot reloading just use `cargo run`.
 
 To run the example with hot-reload enabled run these two commands in parallel:
+
+## Linux and macOS
 
 ```shell
 $ cargo watch -w systems -x 'build -p systems'
 $ cargo watch -i systems -x 'run --features reload'
 ```
 
-To run without it just use `cargo run`.
+## Windows
+
+```shell
+$ cargo watch -w systems -x 'build -p systems'
+$ env CARGO_TARGET_DIR=target-bin cargo watch -i systems -x 'run --features reload'
+```
+
+The reason why Windows usage differs: In `examples/bevy/systems/Cargo.toml` the bevy dependency uses the `dynamic` feature: `bevy = { version = "0.8.0", features = ["dynamic"] }`. This is to speed up recompilation when the systems library changed. 
+
+This means that in addition to `systems.dll` (produced `hot-lib-reloader`) there is `bevy_dylib.dll`. With `dynamic` enabled the bevy executable now loads all dlls in the target directory. Windows will lock all used library files, they can't be modified (or deleted) while still in use. This is different on other operating systems. `hot-lib-reloader` actually creates a copy of `systems.dll` to avoid this exact issue. But with bevy loading it, `systems.dll` can't be replaced.
+
+There are two solutions:
+
+1. Do not use bevy's `dynamic` feature. This makes it work like on Linux and macOS. But the longer compile times ared reducing the usefulness of hot-reload.
+2. Keep using `dynamic` but with two different target directories for the lib and executable. This is what `env CARGO_TARGET_DIR=target-bin` does and the recommended solution.
 
 
-# generate_bevy_systems
+
+# `generate_bevy_systems` flag of `define_lib_reloader!`
 
 Assuming you want to hot-reload bevy systems, place those into a separate library such as [`systems/src/lib.rs`](./systems/src/lib.rs). When [defining the lib-reloader](./src/main.rs), set `generate_bevy_systems: true` similar to:
 
