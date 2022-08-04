@@ -12,7 +12,7 @@ repository = "https://github.com/rksm/hot-lib-reloader-rs"
 description = "Utility to reload libraries on change. For faster feedback cycles."
 
 [dependencies]
-hot-lib-reloader-macro = { version = "0.4.0", path = "./hot-lib-reloader-macro" }
+hot-lib-reloader-macro = { version = "0.4.2", path = "./hot-lib-reloader-macro" }
 libloading = { version = "^0.7" }
 log = "0.4.17"
 notify = { version = "^4" }
