@@ -25,21 +25,25 @@ Note: This is meant to be used for development! Don't use it in production!
 You specify Rust source files that contain functions exported in the library above.
 `hot-lib-reloader` will parse those, find those functions and their signatures and use it to create methods you can call (instead of manually having to query for a library symbol).
 
-For a concrete example see below.
+For a detailed discussion see https://robert.kra.hn/posts/hot-reloading-rust/.
 
 # Usage
 
 Assuming you use a workspace with the following layout:
 
-- Cargo.toml
-- lib/Cargo.toml
-- lib/src/lib.rs
-- bin/Cargo.toml
-- bin/src/main.rs
+```
+├── Cargo.toml
+└── src
+│   └── main.rs
+└── lib
+    ├── Cargo.toml
+    └── src
+        └── lib.rs
+```
 
 ## lib
 
-The library should expose functions and state. It should have specify `dylib` as crate type. The `lib/Cargo.toml`:
+The library should expose functions and state. It should have specify `dylib` as crate type. The `./lib/Cargo.toml`:
 
 ```toml
 [package]
@@ -51,7 +55,7 @@ edition = "2021"
 crate-type = ["rlib", "dylib"]
 ```
 
-And `lib/lib.rs`
+And `./lib/lib.rs`
 
 ```
 #[no_mangle]
@@ -62,20 +66,24 @@ pub fn do_stuff() {
 
 ## bin
 
-In the binary, use the lib and lot `hot-lib-reloader`. The `bin/Cargo.toml`:
+In the binary, use the lib and lot `hot-lib-reloader`. `./Cargo.toml`:
 
 ```toml
+[workspace]
+resolver = "2"
+members = ["lib"]
+
 [package]
 name = "bin"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-lib = { path = "../lib" }
-hot-lib-reloader = "0.4.0"
+hot-lib-reloader = "^0.4"
+lib = { path = "lib" }
 ```
 
-You can then define and use the lib reloader like so:
+You can then define and use the lib reloader like so (`./src/main.rs`):
 
 ```no_run
 hot_lib_reloader::define_lib_reloader! {
