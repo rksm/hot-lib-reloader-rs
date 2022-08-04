@@ -263,7 +263,7 @@ impl LibReloader {
             ..
         } = self;
 
-        println!("[hot-lib-reloader] reloading lib {watched_lib_file:?} ({loaded_lib_file:?})");
+        log::info!("reloading lib {watched_lib_file:?}");
 
         // Close the loaded lib, copy the new lib to a file we can load, then load it.
         if let Some(lib) = lib.take() {
@@ -290,10 +290,7 @@ impl LibReloader {
     /// Watch for changes of `lib_file`.
     fn watch(&self, lib_file: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
         let lib_file = lib_file.as_ref().to_path_buf();
-        log::info!(
-            "[hot-lib-reloader] start watching changes of file {}",
-            lib_file.display()
-        );
+        log::info!("start watching changes of file {}", lib_file.display());
 
         let changed = self.changed.clone();
         let last_changed = self.changed_at.clone();
@@ -325,7 +322,7 @@ impl LibReloader {
                     return false;
                 }
 
-                log::debug!("[hot-lib-reloader] {} changed", lib_file.display());
+                log::debug!("{} changed", lib_file.display());
 
                 last_change = now;
                 changed.store(true, Ordering::Relaxed);
@@ -342,7 +339,7 @@ impl LibReloader {
                         // just one hard link removed?
                         if !lib_file.exists() {
                             log::debug!(
-                                "[hot-lib-reloader] {} was removed, trying to watch it again...",
+                                "{} was removed, trying to watch it again...",
                                 lib_file.display()
                             );
                         }
@@ -351,7 +348,7 @@ impl LibReloader {
                                 .watch(&lib_file, RecursiveMode::NonRecursive)
                                 .is_ok()
                             {
-                                log::info!("[hot-lib-reloader] watching {}", lib_file.display());
+                                log::info!("watching {}", lib_file.display());
                                 signal_change();
                                 break;
                             }
@@ -362,9 +359,7 @@ impl LibReloader {
                         log::trace!("file change event: {change:?}");
                     }
                     Err(err) => {
-                        log::error!(
-                            "[hot-lib-reloader] file watcher error, stopping reload loop: {err}"
-                        );
+                        log::error!("file watcher error, stopping reload loop: {err}");
                         break;
                     }
                 }
@@ -415,7 +410,7 @@ fn watched_and_loaded_library_paths(
 
     let watched_lib_file = lib_dir.join(&lib_name).with_extension(ext);
     let loaded_lib_file = lib_dir
-        .join(format!("{lib_name}-hot.{load_counter}"))
+        .join(format!("{lib_name}-hot-{load_counter}"))
         .with_extension(ext);
     (watched_lib_file, loaded_lib_file)
 }
