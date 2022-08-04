@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.4]
+### Changed
+- Mention requirement of nightly in readme
+
 ## [0.4.3]
 ### Changed
 - Fixed example in readme

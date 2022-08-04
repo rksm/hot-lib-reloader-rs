@@ -17,6 +17,8 @@ Useful for changing code and seeing the effects without having to restart the ap
 
 Note: This is meant to be used for development! Don't use it in production!
 
+Also currently [`proc_macro::Span`](https://github.com/rust-lang/rust/issues/54725) is required and you will need to run hot-reloadable code with Rust nightly.
+
 # What it does
 
 1. Watch a dynamically loadable library you specify, reload it when it changes.
