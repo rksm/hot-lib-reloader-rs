@@ -34,7 +34,7 @@ pub fn player_movement_system(
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<&mut Transform, With<Player>>,
 ) { /*...*/ }
-``
+```
 
 `generate_bevy_systems` will 
 
