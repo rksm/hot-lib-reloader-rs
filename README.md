@@ -12,6 +12,8 @@
 A simple crate around [libloading](https://crates.io/crates/libloading) that can be used to watch Rust libraries (dylibs) and will reload them again when they have changed.
 Useful for changing code and seeing the effects without having to restart the app.
 
+![](doc/hot-reload-demo.gif)
+
 Note: This is meant to be used for development! Don't use it in production!
 
 ## Usage
