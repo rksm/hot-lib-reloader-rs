@@ -2,7 +2,8 @@
 
 ## [0.4.4]
 ### Changed
-- Mention requirement of nightly in readme
+- Fix reloads on macOS M1
+- Markdown fixes
 
 ## [0.4.3]
 ### Changed
