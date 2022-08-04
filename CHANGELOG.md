@@ -1,13 +1,9 @@
 # Changelog
 
-## [0.4.4]
+## [0.4.3]
 ### Changed
 - Fix reloads on macOS M1
 - Markdown fixes
-
-## [0.4.3]
-### Changed
-- Fixed example in readme
 
 ## [0.4.2]
 ### Added
