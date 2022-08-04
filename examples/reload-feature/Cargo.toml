@@ -14,5 +14,5 @@ lib = { path = "lib" }
 log = "^0.4"
 
 [features]
-default = ["reload"]
+default = []
 reload = ["dep:hot-lib-reloader"]

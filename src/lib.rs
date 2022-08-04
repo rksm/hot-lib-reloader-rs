@@ -175,6 +175,7 @@ use notify::DebouncedEvent;
 use notify::RecursiveMode;
 use notify::Watcher;
 use std::error::Error;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 use std::sync::Mutex;
@@ -186,6 +187,9 @@ use std::time::Instant;
 pub use hot_lib_reloader_macro::define_lib_reloader;
 
 pub struct LibReloader {
+    load_counter: usize,
+    lib_dir: PathBuf,
+    lib_name: String,
     changed: Arc<atomic::AtomicBool>,
     changed_at: Arc<Mutex<Option<Instant>>>,
     lib: Option<Library>,
@@ -203,24 +207,15 @@ impl LibReloader {
         let lib_dir = find_file_or_dir_in_parent_directories(lib_dir.as_ref())?;
         log::debug!("found lib dir at {lib_dir:?}");
 
-        // sort out os dependent file name
-        #[cfg(target_os = "macos")]
-        let (prefix, ext) = ("lib", "dylib");
-        #[cfg(target_os = "linux")]
-        let (prefix, ext) = ("lib", "so");
-        #[cfg(target_os = "windows")]
-        let (prefix, ext) = ("", "dll");
-        let lib_name = format!("{prefix}{}", lib_name.as_ref());
+        let load_counter = 0;
 
-        let watched_lib_file = lib_dir.join(&lib_name).with_extension(ext);
-        let loaded_lib_file = lib_dir
-            .join(format!("{lib_name}-hot"))
-            .with_extension("dll");
+        let (watched_lib_file, loaded_lib_file) =
+            watched_and_loaded_library_paths(&lib_dir, &lib_name, load_counter);
 
         let lib = if watched_lib_file.exists() {
             // We don't load the actual lib because this can get problems e.g. on Windows
             // where a file lock would be held, preventing the lib from changing later.
-            std::fs::copy(&watched_lib_file, &loaded_lib_file)?;
+            fs::copy(&watched_lib_file, &loaded_lib_file)?;
             Some(unsafe { Library::new(&loaded_lib_file) }?)
         } else {
             log::debug!("library {watched_lib_file:?} does not yet exist");
@@ -228,6 +223,9 @@ impl LibReloader {
         };
 
         let lib_loader = Self {
+            load_counter,
+            lib_dir,
+            lib_name: lib_name.as_ref().to_string(),
             watched_lib_file: watched_lib_file.clone(),
             loaded_lib_file,
             lib,
@@ -256,22 +254,32 @@ impl LibReloader {
     /// Reload library `self.lib_file`.
     fn reload(&mut self) -> Result<(), Box<dyn Error>> {
         let Self {
-            lib,
+            load_counter,
+            lib_dir,
+            lib_name,
             watched_lib_file,
             loaded_lib_file,
+            lib,
             ..
         } = self;
 
-        println!("[hot-lib-reloader] reloading lib {watched_lib_file:?}",);
+        println!("[hot-lib-reloader] reloading lib {watched_lib_file:?} ({loaded_lib_file:?})");
 
         // Close the loaded lib, copy the new lib to a file we can load, then load it.
         if let Some(lib) = lib.take() {
             lib.close()?;
+            if loaded_lib_file.exists() {
+                let _ = fs::remove_file(&loaded_lib_file);
+            }
         }
 
         if watched_lib_file.exists() {
-            std::fs::copy(watched_lib_file, loaded_lib_file)?;
-            self.lib = Some(unsafe { Library::new(&self.loaded_lib_file) }?);
+            *load_counter += 1;
+            let (_, loaded_lib_file) =
+                watched_and_loaded_library_paths(lib_dir, lib_name, *load_counter);
+            fs::copy(watched_lib_file, &loaded_lib_file)?;
+            self.lib = Some(unsafe { Library::new(&loaded_lib_file) }?);
+            self.loaded_lib_file = loaded_lib_file;
         } else {
             log::warn!("trying to reload library but it does not exist");
         }
@@ -384,9 +392,32 @@ impl LibReloader {
 impl Drop for LibReloader {
     fn drop(&mut self) {
         if self.loaded_lib_file.exists() {
-            let _ = std::fs::remove_file(&self.loaded_lib_file);
+            let _ = fs::remove_file(&self.loaded_lib_file);
         }
     }
+}
+
+fn watched_and_loaded_library_paths(
+    lib_dir: impl AsRef<Path>,
+    lib_name: impl AsRef<str>,
+    load_counter: usize,
+) -> (PathBuf, PathBuf) {
+    let lib_dir = &lib_dir.as_ref();
+
+    // sort out os dependent file name
+    #[cfg(target_os = "macos")]
+    let (prefix, ext) = ("lib", "dylib");
+    #[cfg(target_os = "linux")]
+    let (prefix, ext) = ("lib", "so");
+    #[cfg(target_os = "windows")]
+    let (prefix, ext) = ("", "dll");
+    let lib_name = format!("{prefix}{}", lib_name.as_ref());
+
+    let watched_lib_file = lib_dir.join(&lib_name).with_extension(ext);
+    let loaded_lib_file = lib_dir
+        .join(format!("{lib_name}-hot.{load_counter}"))
+        .with_extension(ext);
+    (watched_lib_file, loaded_lib_file)
 }
 
 /// Try to find that might be a relative path such as `target/debug/` by walking
