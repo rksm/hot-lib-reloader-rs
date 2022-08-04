@@ -1,0 +1,3 @@
+# fixes https://github.com/bevyengine/bevy/issues/1110
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-Zshare-generics=off"]
