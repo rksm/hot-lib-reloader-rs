@@ -17,6 +17,16 @@ Useful for changing code and seeing the effects without having to restart the ap
 
 Note: This is meant to be used for development! Don't use it in production!
 
+# What it does
+
+1. Watch a dynamically loadable library you specify, reload it when it changes.
+
+2. Generates a type that provides methods to dynamically call the functions exposed by that library.
+You specify Rust source files that contain functions exported in the library above.
+`hot-lib-reloader` will parse those, find those functions and their signatures and use it to create methods you can call (instead of manually having to query for a library symbol).
+
+For a concrete example see below.
+
 # Usage
 
 Assuming you use a workspace with the following layout:
@@ -95,6 +105,10 @@ fn main() {
 }
 
 ```
+
+Above is the part that matters: A new type `MyLibLoader` is created that provides a method `MyLibLoader::do_stuff(&self)`.
+The method is automatically generated from `lib::do_stuff()`.
+Indeed, if we were to add a method `lib::add_numbers(a: i32, b: i32) -> i32`, a method `MyLibLoader::add_numbers(&self, a: i32, b: i32) -> i32` would be generated. Etc.
 
 Note: If you prefer to not use macros, the macro-free version of the code above is:
 
