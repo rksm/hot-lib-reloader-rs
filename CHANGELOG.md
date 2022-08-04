@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.3]
+### Changed
+- Fixed example in readme
+
 ## [0.4.2]
 ### Added
 - demo gif in readme
