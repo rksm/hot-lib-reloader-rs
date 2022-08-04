@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.2]
+### Added
+- demo gif in readme
+
 ## [0.4.0]
 ### Changed
 - Reimplemented the `define_lib_reloader` macro as proc macro. It has a somewhat different syntax now (breaking change)
