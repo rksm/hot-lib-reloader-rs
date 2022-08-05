@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.4]
+### Changed
+- Fix how library files get renamed
+- Add note to bevy example for how to use it on Windows
+
 ## [0.4.3]
 ### Changed
 - Fix reloads on macOS M1
