@@ -184,13 +184,14 @@ If you can, don't use `hot-lib-reloader` in combination with `tracing`.
 
 */
 
+mod error;
+
 use libloading::Library;
 use libloading::Symbol;
 use notify::watcher;
 use notify::DebouncedEvent;
 use notify::RecursiveMode;
 use notify::Watcher;
-use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
@@ -200,6 +201,7 @@ use std::thread;
 use std::time::Duration;
 use std::time::Instant;
 
+pub use error::HotReloaderError;
 pub use hot_lib_reloader_macro::define_lib_reloader;
 
 pub struct LibReloader {
@@ -217,7 +219,7 @@ impl LibReloader {
     pub fn new(
         lib_dir: impl AsRef<Path>,
         lib_name: impl AsRef<str>,
-    ) -> Result<Self, Box<dyn Error>> {
+    ) -> Result<Self, HotReloaderError> {
         // find the target dir in which the build is happening and where we should find
         // the library
         let lib_dir = find_file_or_dir_in_parent_directories(lib_dir.as_ref())?;
@@ -256,7 +258,7 @@ impl LibReloader {
 
     /// Checks if the watched library has changed. If it has, reload it and return
     /// true. Otherwise return false.
-    pub fn update(&mut self) -> Result<bool, Box<dyn Error>> {
+    pub fn update(&mut self) -> Result<bool, HotReloaderError> {
         if !self.changed.load(Ordering::Relaxed) {
             return Ok(false);
         }
@@ -268,7 +270,7 @@ impl LibReloader {
     }
 
     /// Reload library `self.lib_file`.
-    fn reload(&mut self) -> Result<(), Box<dyn Error>> {
+    fn reload(&mut self) -> Result<(), HotReloaderError> {
         let Self {
             load_counter,
             lib_dir,
@@ -305,7 +307,7 @@ impl LibReloader {
     }
 
     /// Watch for changes of `lib_file`.
-    fn watch(&self, lib_file: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
+    fn watch(&self, lib_file: impl AsRef<Path>) -> Result<(), HotReloaderError> {
         let lib_file = lib_file.as_ref().to_path_buf();
         log::info!("start watching changes of file {}", lib_file.display());
 
@@ -396,7 +398,7 @@ impl LibReloader {
     /// # Safety
     ///
     /// Users of this API must specify the correct type of the function or variable loaded.
-    pub unsafe fn get_symbol<T>(&self, name: &[u8]) -> Result<Symbol<T>, Box<dyn Error>> {
+    pub unsafe fn get_symbol<T>(&self, name: &[u8]) -> Result<Symbol<T>, HotReloaderError> {
         Ok(self.lib.as_ref().unwrap().get(name)?)
     }
 }
@@ -437,7 +439,7 @@ fn watched_and_loaded_library_paths(
 /// app was started from a directory that is not the project/workspace root.
 fn find_file_or_dir_in_parent_directories(
     file: impl AsRef<Path>,
-) -> Result<PathBuf, Box<dyn Error>> {
+) -> Result<PathBuf, HotReloaderError> {
     let mut file = file.as_ref().to_path_buf();
     if !file.exists() && file.is_relative() {
         if let Ok(cwd) = std::env::current_dir() {
