@@ -145,7 +145,7 @@ fn main() {
 To start compilation of the library:
 
 ```shell
-cargo watch -w lib -x build
+cargo watch -w lib -x 'build -p lib'
 ```
 
 And in addition to that start compilation of the binary with reload enabled:
@@ -157,6 +157,7 @@ cargo watch -w bin -x run
 A change that you now make to `lib/lib.rs` will have an immediate effect on the app.
 
 
+
 ## More examples
 
 Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples).
@@ -164,6 +165,21 @@ Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/
 - [minimal](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/minimal): Bare-bones setup.
 - [reload-feature](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature): Use a feature to switch between dynamic and static version.
 - [bevy](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy): Shows how to hot-reload bevy systems.
+
+
+## Known issues
+
+### tracing crate
+
+When used with the `tracing` crate multiple issues can occur:
+- When `tracing` is used in the library that is reloaded the app sometimes crashes with `Attempted to register a DefaultCallsite that already exists!`
+- When used in combination with bevy, `commands.insert(component)` operations stop to work after a reload, likely because of internal state getting messed up.
+
+If you can, don't use `hot-lib-reloader` in combination with `tracing`.
+
+
+
+## License
 
 
 License: MIT

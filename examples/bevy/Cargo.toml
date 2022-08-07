@@ -14,4 +14,8 @@ systems = { path = "systems" }
 
 [features]
 default = []
-reload = ["dep:hot-lib-reloader"]
+reload = [
+  "dep:hot-lib-reloader",
+  # this is important on windows for avoiding file locking issues:
+  "bevy/dynamic",
+]

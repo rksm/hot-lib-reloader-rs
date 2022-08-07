@@ -7,4 +7,9 @@ edition = "2021"
 crate-type = ["rlib", "dylib"]
 
 [dependencies]
-bevy = { version = "0.8.0", features = ["dynamic"] }
+bevy = { version = "0.8.0" }
+rand = "0.8.5"
+
+[features]
+default = []
+dynamic = ["bevy/dynamic"]

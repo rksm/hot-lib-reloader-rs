@@ -8,10 +8,13 @@ To run the example with hot-reload enabled run these two commands in parallel:
 
 ## Linux and macOS
 
+
 ```shell
 $ cargo watch -w systems -x 'build -p systems'
-$ cargo watch -i systems -x 'run --features reload'
+$ cargo run --features reload
 ```
+
+Alternatively with a tool like [runcc](https://crates.io/crates/runcc) you can run this as a single commands: `cargo runcc -c`
 
 ## Windows
 
@@ -20,18 +23,16 @@ $ cargo watch -w systems -x 'build -p systems'
 $ env CARGO_TARGET_DIR=target-bin cargo watch -i systems -x 'run --features reload'
 ```
 
-The reason why Windows usage differs: In `examples/bevy/systems/Cargo.toml` the bevy dependency uses the `dynamic` feature: `bevy = { version = "0.8.0", features = ["dynamic"] }`. This is to speed up recompilation when the systems library changed. 
+Alternatively with [runcc](https://crates.io/crates/runcc): `cargo runcc -c runcc-windows.yml`
 
-This means that in addition to `systems.dll` (produced `hot-lib-reloader`) there is `bevy_dylib.dll`. With `dynamic` enabled the bevy executable now loads all dlls in the target directory. Windows will lock all used library files, they can't be modified (or deleted) while still in use. This is different on other operating systems. `hot-lib-reloader` actually creates a copy of `systems.dll` to avoid this exact issue. But with bevy loading it, `systems.dll` can't be replaced.
-
-There are two solutions:
-
-1. Do not use bevy's `dynamic` feature. This makes it work like on Linux and macOS. But the longer compile times ared reducing the usefulness of hot-reload.
-2. Keep using `dynamic` but with two different target directories for the lib and executable. This is what `env CARGO_TARGET_DIR=target-bin` does and the recommended solution.
+[Why is this different from Linux / MacOS?](#library-files-on-windows-get-locked-while-the-app-is-running-and-there-is-a-permission-error-when-they-change)
 
 
+# Automatically generating reloadable system functions
 
-# `generate_bevy_systems` flag of `define_lib_reloader!`
+The `define_lib_reloader!` macro allows for a property `generate_bevy_systems` that does automatically generate systems in the context of the main app that make those systems easily reloadable and avoids you writing boilerplate funcions. For the detailed explanation about that see ["How to use it with Bevy"](https://robert.kra.hn/posts/hot-reloading-rust/#how-to-use-it-with-bevy).
+
+The short version of it is here:
 
 Assuming you want to hot-reload bevy systems, place those into a separate library such as [`systems/src/lib.rs`](./systems/src/lib.rs). When [defining the lib-reloader](./src/main.rs), set `generate_bevy_systems: true` similar to:
 
@@ -55,7 +56,7 @@ pub fn player_movement_system(
 ) { /*...*/ }
 ```
 
-`generate_bevy_systems` will 
+`generate_bevy_systems` will
 
 This will generate a proxying function like
 
@@ -104,3 +105,25 @@ fn update_lib(
     }
 }
 ```
+
+
+# Known issues
+
+See the [list of known issues in the main readme](https://github.com/rksm/hot-lib-reloader-rs#known-issues).
+
+Bevy specific issues:
+
+## Define your components and state outside of the reloadable systems crate
+
+To keep the example simple, bevy components are defined [as part of `systems/src/lib.rs`](https://github.com/rksm/hot-lib-reloader-rs/blob/master/examples/bevy/systems/src/lib.rs#L5). This works for simple cases but in more complex scenarios you'll find that component queries suddenly return zero elements after reloading. The reason for that is that now the types differ between the executable and the reloadad library. To circumvent that, create another sub-crate `components` and put the state definitions in there. Then have bothe the main crate as well as the systems crate depend and import it. This way the structs / enums are part of a different compilation unit and will stay the same as long as you don't change that crate.
+
+## library files on Windows get locked while the app is running and there is a permission error when they change
+
+On Windows, dll files like `systems.dll` will get locked when they are in use by a program. This is a problem for the hot-reloader as it expects those files to change. The setup provided here is careful to avoid these issues. In particular, the following can create a bevy-specific problem:
+
+When Bevy is used with the `dynamic` feature (`bevy = { version = "0.8.0", features = ["dynamic"] }`) there will also be (in addition to `systems.dll` produced `hot-lib-reloader`) a `bevy_dylib.dll`. With `dynamic` enabled the bevy executable now loads all dlls in the target directory — even though the hot-reloader
+
+There are two solutions:
+
+1. Do not use bevy's `dynamic` feature. This makes it work like on Linux and macOS. But the longer compile times ared reducing the usefulness of hot-reload.
+2. Keep using `dynamic` but with two different target directories for the lib and executable. This is what `env CARGO_TARGET_DIR=target-bin` (see [usage](#usage)) does and the recommended solution.
