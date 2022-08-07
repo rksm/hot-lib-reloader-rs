@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+#[allow(unused_imports)]
+use components::*;
 use systems::*;
 
 #[cfg(feature = "reload")]
@@ -15,10 +17,17 @@ struct LibLoaderUpdateTimer(Timer);
 
 fn main() {
     let mut app = App::new();
-
     app.add_plugins(DefaultPlugins)
         .add_startup_system(setup)
-        .add_system(player_movement_system)
+        .add_system_set(
+            SystemSet::new()
+                .with_system(player_movement_system)
+                .with_system(player_shooting_system)
+                .with_system(bullet_movement_system)
+                .with_system(bullet_hit_system)
+                .with_system(spawn_other_ships)
+                .with_system(move_other_ships),
+        )
         .add_system(bevy::window::close_on_esc);
 
     #[cfg(feature = "reload")]

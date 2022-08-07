@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["systems"]
+members = ["systems", "components"]
 
 [package]
 name = "bin"
@@ -9,13 +9,17 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.8.0" }
+components = { path = "components" }
 hot-lib-reloader = { path = "../..", optional = true }
+rand = "0.8.5"
 systems = { path = "systems" }
 
 [features]
 default = []
 reload = [
   "dep:hot-lib-reloader",
-  # this is important on windows for avoiding file locking issues:
+  # Make sure that the types don't change:
+  "components/dynamic",
+  # This is important on windows for avoiding file locking issues:
   "bevy/dynamic",
 ]

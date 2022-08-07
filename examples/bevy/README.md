@@ -10,7 +10,7 @@ To run the example with hot-reload enabled run these two commands in parallel:
 
 
 ```shell
-$ cargo watch -w systems -x 'build -p systems'
+$ cargo watch -w systems -w components -x "build -p systems --features dynamic"
 $ cargo run --features reload
 ```
 
@@ -19,8 +19,8 @@ Alternatively with a tool like [runcc](https://crates.io/crates/runcc) you can r
 ## Windows
 
 ```shell
-$ cargo watch -w systems -x 'build -p systems'
-$ env CARGO_TARGET_DIR=target-bin cargo watch -i systems -x 'run --features reload'
+$ cargo watch -w systems -w components -x "build -p systems --features dynamic"
+$ env CARGO_TARGET_DIR="target-bin" cargo run --features reload
 ```
 
 Alternatively with [runcc](https://crates.io/crates/runcc): `cargo runcc -c runcc-windows.yml`
@@ -115,7 +115,8 @@ Bevy specific issues:
 
 ## Define your components and state outside of the reloadable systems crate
 
-To keep the example simple, bevy components are defined [as part of `systems/src/lib.rs`](https://github.com/rksm/hot-lib-reloader-rs/blob/master/examples/bevy/systems/src/lib.rs#L5). This works for simple cases but in more complex scenarios you'll find that component queries suddenly return zero elements after reloading. The reason for that is that now the types differ between the executable and the reloadad library. To circumvent that, create another sub-crate `components` and put the state definitions in there. Then have bothe the main crate as well as the systems crate depend and import it. This way the structs / enums are part of a different compilation unit and will stay the same as long as you don't change that crate.
+To make changes to the systems not break the type ids of components, making a `components` sub-crate is recommended. This way, they are a separate compilation unit. Otherwise component queries might suddenly be empty after code changes.
+
 
 ## library files on Windows get locked while the app is running and there is a permission error when they change
 

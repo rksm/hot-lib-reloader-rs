@@ -1,4 +1,6 @@
 target
-target-bin
 Cargo.lock
 /assets
+
+.idea
+/target-bin/
