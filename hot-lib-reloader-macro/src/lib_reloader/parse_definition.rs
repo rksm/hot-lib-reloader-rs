@@ -5,7 +5,7 @@ use syn::{
     Result,
 };
 
-use crate::types::{Field, PendingLibReloaderDefinition};
+use super::types::{Field, PendingLibReloaderDefinition};
 
 #[inline]
 pub(crate) fn parse_field(
