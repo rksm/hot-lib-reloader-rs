@@ -1,16 +1,13 @@
-use syn::{
-    braced, bracketed, parse::ParseBuffer, spanned::Spanned, ForeignItemFn, LitBool, LitStr, Result,
-};
+use syn::{braced, bracketed, parse::ParseBuffer, spanned::Spanned, ForeignItemFn, LitStr, Result};
 
 use crate::util::read_unmangled_functions_from_file;
 
-use super::types::{Field, PendingLibReloaderDefinition};
+use super::types::{Field, PendingHotModuleDefinition};
 
-#[inline]
 pub(crate) fn parse_field(
     field: Field,
     stream: &ParseBuffer,
-    def: &mut PendingLibReloaderDefinition,
+    def: &mut PendingHotModuleDefinition,
 ) -> Result<()> {
     match field {
         Field::LibDir => {
@@ -36,10 +33,9 @@ pub(crate) fn parse_field(
                 def.lib_functions
                     .extend(read_unmangled_functions_from_file(file_name)?);
             }
-        }
-        Field::GenerateBevySystemFunctions => {
-            def.generate_bevy_system_functions = Some(stream.parse::<LitBool>()?);
-        }
+        } // Field::GenerateBevySystemFunctions => {
+          //     def.generate_bevy_system_functions = Some(stream.parse::<LitBool>()?);
+          // }
     }
 
     Ok(())

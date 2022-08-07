@@ -13,8 +13,8 @@ description = "Macro crate for hot-lib-reloader"
 proc-macro = true
 
 [dependencies]
-# syn = { version = "1.0", features = ["full", "extra-traits"] }
 heck = "0.4"
 proc-macro2 = "1.0.42"
 quote = "1.0"
-syn = { version = "1.0", features = ["full"] }
+syn = { version = "1.0", features = ["full", "extra-traits"] }
+# syn = { version = "1.0", features = ["full"] }
