@@ -1,5 +1,18 @@
 # Changelog
 
+This package tries to adhere to [semver](https://semver.org/).
+
+## [0.5.0]
+### Added
+- added the `#[hot_module]` attribute macro
+- manage the reloader internally
+- provide hot reloadable functions as part of the hot_module with the identical interface they normally have
+- tests & CI setup
+- more documentation and examples
+### Changed
+- deprecated `define_lib_reloader`
+
+
 ## [0.4.4]
 ### Changed
 - Fix how library files get renamed
