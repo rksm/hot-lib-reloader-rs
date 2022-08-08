@@ -142,6 +142,8 @@ pub fn do_stuff(state: &mut State) {
 Now change for example the print statement in `lib/lib.rs` and see the effect on the runtime.
 
 
+In addition, using a tool like [cargo runcc](https://crates.io/crates/runcc) is recommended. This allows to run both the lib build and the application in one go.
+
 
 ## Usage tips
 
