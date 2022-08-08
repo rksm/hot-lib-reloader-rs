@@ -2,19 +2,16 @@ use bevy::prelude::*;
 
 #[cfg(not(feature = "reload"))]
 use systems::*;
-
-#[cfg(feature = "reload")]
-hot_lib_reloader::hot_module! {
-    unsafe mod systems_hot {
-        use bevy::prelude::*;
-        pub use components::*;
-    }
-    lib_name = "systems";
-    source_files = ["../systems/src/lib.rs"];
-}
-
 #[cfg(feature = "reload")]
 use systems_hot::*;
+
+#[cfg(feature = "reload")]
+#[hot_lib_reloader::hot_module(dylib = "systems")]
+mod systems_hot {
+    use bevy::prelude::*;
+    pub use components::*;
+    hot_functions_from_file!("../systems/src/lib.rs");
+}
 
 fn main() {
     let mut app = App::new();
