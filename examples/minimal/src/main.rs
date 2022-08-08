@@ -1,6 +1,4 @@
-use hot_lib_reloader::hot_module;
-
-#[hot_module(dylib = "lib")]
+#[hot_lib_reloader::hot_module(dylib = "lib")]
 mod hot_lib {
     hot_functions_from_file!("../lib/src/lib.rs");
 }

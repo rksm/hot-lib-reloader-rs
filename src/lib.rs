@@ -33,7 +33,7 @@ For a detailed discussion see https://robert.kra.hn/posts/hot-reloading-rust/.
 
 Assuming you use a workspace with the following layout:
 
-```
+```ignore
 ├── Cargo.toml
 └── src
 │   └── main.rs
@@ -87,7 +87,7 @@ lib = { path = "lib" }
 
 You can then define and use the lib reloader like so (`./src/main.rs`):
 
-```no_run
+```ignore
 hot_lib_reloader::define_lib_reloader! {
     unsafe MyLibLoader {
         // Will look for "liblib.so" (Linux), "lib.dll" (Windows), ...

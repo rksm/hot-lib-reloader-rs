@@ -5,3 +5,4 @@ Cargo.lock
 DEV.org
 *.org
 examples/bevy-extended/
+/.idea/
