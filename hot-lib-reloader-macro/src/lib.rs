@@ -23,8 +23,14 @@ pub fn define_lib_reloader(input: proc_macro::TokenStream) -> proc_macro::TokenS
     (quote::quote! { #input }).into()
 }
 
-#[proc_macro]
-pub fn hot_module(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let input = syn::parse_macro_input!(input as hot_module::HotModuleDefinition);
-    (quote::quote! { #input }).into()
+#[proc_macro_attribute]
+pub fn hot_module(
+    args: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    let attributes = syn::parse_macro_input!(args as hot_module::HotModuleAttribute);
+    let mut module = syn::parse_macro_input!(item as hot_module::HotModule);
+    module.attributes = Some(attributes);
+
+    (quote::quote! { #module }).into()
 }

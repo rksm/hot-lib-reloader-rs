@@ -1,6 +1,6 @@
 use proc_macro2::Span;
 use std::path::PathBuf;
-use syn::{spanned::Spanned, Error, ForeignItemFn, LitStr, Result};
+use syn::{Error, ForeignItemFn, LitStr, Result};
 
 pub fn ident_from_pat(
     pat: &syn::Pat,
@@ -71,7 +71,7 @@ pub fn read_unmangled_functions_from_file(file_name: LitStr) -> Result<Vec<(Fore
                     semi_token: syn::token::Semi(span),
                 };
 
-                functions.push((fun, file_name.span()));
+                functions.push((fun, span));
             }
             _ => continue,
         }
