@@ -5,3 +5,5 @@ Cargo.lock
 DEV.org
 *.org
 /.idea/
+/examples/macro-test.rs
+/examples/input-files/
