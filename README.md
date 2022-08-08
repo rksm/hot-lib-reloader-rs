@@ -6,30 +6,51 @@
 [![CI](https://github.com/rksm/hot-lib-reloader-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/rksm/hot-lib-reloader-rs/actions/workflows/ci.yml)
 [![License](https://img.shields.io/crates/l/hot-lib-reloader?color=informational&logo=mit)](/LICENSE.md)
 
-A simple crate around [libloading](https://crates.io/crates/libloading) that can be used to watch Rust libraries (dylibs) and will reload them again when they have changed.
-Useful for changing code and seeing the effects without having to restart the app.
-
 ![](doc/hot-reload-demo.gif)
 
-Note: This is meant to be used for development! Don't use it in production!
+`hot-lib-reloader` is a development tool that allows you to reload functions of a running Rust program.
+This allows to do "live programming" where you modify code and immediately see the effects in your running program.
 
-Also currently [`proc_macro::Span`](https://github.com/rust-lang/rust/issues/54725) is required and you will need to run hot-reloadable code with Rust nightly.
+This is build around the [libloading crate](https://crates.io/crates/libloading) and will require you to put code you want to hot-reload inside a Rust library (dylib). For a detailed discussion about the idea and implementation see [this blog post](https://robert.kra.hn/posts/hot-reloading-rust).
 
-## What it does
 
-1. Watch a dynamically loadable library you specify, reload it when it changes.
+## Table of contents:
 
-2. Generates a type that provides methods to dynamically call the functions exposed by that library.
-You specify Rust source files that contain functions exported in the library above.
-`hot-lib-reloader` will parse those, find those functions and their signatures and use it to create methods you can call (instead of manually having to query for a library symbol).
+- [Usage](#usage)
+    - [Example project setup](#example-project-setup)
+        - [Executable](#executable)
+        - [Library](#library)
+        - [Running it](#running-it)
 
-For a detailed discussion see https://robert.kra.hn/posts/hot-reloading-rust/.
+- [Usage tips](#usage-tips)
+    - [Know the limitations](#know-the-limitations)
+        - [No signature changes](#no-signature-changes)
+        - [Type changes require some care](#type-changes-require-some-care)
+        - [Hot-reloadable functions cannot be generic](#hot-reloadable-functions-cannot-be-generic)
+        - [Global state in reloadable code](#global-state-in-reloadable-code)
+        - [Rust nightly](#rust-nightly)
+    - [Use feature flags to switch between hot-reload and static code](#use-feature-flags-to-switch-between-hot-reload-and-static-code)
+    - [Use serialization or generic values for changing types](#use-serialization-or-generic-values-for-changing-types)
+    - [Use a hot-reload friendly app structure](#use-a-hot-reload-friendly-app-structure)
+    - [Use multiple libraries](#use-multiple-libraries)
+    - [Code-completion with rust-analyzer](#code-completion-with-rust-analyzer)
+
+- [Examples](#examples)
+
+- [Known issues](#known-issues)
+    - [tracing crate](#tracing-crate)
+
 
 ## Usage
 
-Assuming you use a workspace with the following layout:
+To quicky generate a new project supporting hot-reload you can use a [cargo generate](https://cargo-generate.github.io/cargo-generate/) template: `cargo generate rksm/rust-hot-reload`.
 
-```rust
+
+### Example project setup
+
+Assuming you use a workspace project with the following layout:
+
+```output
 ├── Cargo.toml
 └── src
 │   └── main.rs
@@ -39,32 +60,10 @@ Assuming you use a workspace with the following layout:
         └── lib.rs
 ```
 
-### lib
 
-The library should expose functions and state. It should have specify `dylib` as crate type. The `./lib/Cargo.toml`:
+#### Executable
 
-```toml
-[package]
-name = "lib"
-version = "0.1.0"
-edition = "2021"
-
-[lib]
-crate-type = ["rlib", "dylib"]
-```
-
-And `./lib/lib.rs`
-
-```rust
-#[no_mangle]
-pub fn do_stuff() {
-    println!("doing stuff");
-}
-```
-
-### bin
-
-In the binary, use the lib and lot `hot-lib-reloader`. `./Cargo.toml`:
+Setup the workspace with a root project named `bin` in `./Cargo.toml`:
 
 ```toml
 [workspace]
@@ -77,91 +76,232 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-hot-lib-reloader = "^0.4"
+hot-lib-reloader = "^0.5"
 lib = { path = "lib" }
 ```
 
-You can then define and use the lib reloader like so (`./src/main.rs`):
+In `./src/main.rs` define a sub-module which wraps the functions exported by the library:
 
 ```rust
-hot_lib_reloader::define_lib_reloader! {
-    unsafe MyLibLoader {
-        // Will look for "liblib.so" (Linux), "lib.dll" (Windows), ...
-        lib_name: "lib",
-        // Where to load the reloadable functions from,
-        // relative to current file:
-        source_files: ["../../lib/src/lib.rs"]
-        // You can optionally specify manually:
-        // functions: {
-        //     fn do_stuff();
-        // }
-    }
+// The value of `dylib = "..."` should be the library containing the hot-reloadable functions
+// It should normally be the crate name of your sub-crate.
+#[hot_lib_reloader::hot_module(dylib = "lib")]
+mod hot_lib {
+    // Reads public no_mangle functions from lib.rs and  generates hot-reloadable
+    // wrapper functions with the same signature inside this module.
+    hot_functions_from_file!("../lib/src/lib.rs");
+
+    // Because we generate functions with the exact same signatures,
+    // we need to import types used
+    pub use lib::State;
 }
 
 fn main() {
-    let mut lib = MyLibLoader::new().expect("init lib loader");
-
+    let mut state = hot_lib::State { counter: 0 };
+    // Running in a loop so you can modify the code and see the effects
     loop {
-        lib.update().expect("lib update"); // will reload lib on change
-
-        lib.do_stuff();
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
-    }
-}
-
-```
-
-Above is the part that matters: A new type `MyLibLoader` is created that provides a method `MyLibLoader::do_stuff(&self)`.
-The method is automatically generated from `lib::do_stuff()`.
-Indeed, if we were to add a method `lib::add_numbers(a: i32, b: i32) -> i32`, a method `MyLibLoader::add_numbers(&self, a: i32, b: i32) -> i32` would be generated. Etc.
-
-Note: If you prefer to not use macros, the macro-free version of the code above is:
-
-```rust
-use hot_lib_reloader::LibReloader;
-
-fn main() {
-    let mut lib = LibReloader::new("target/debug", "lib").expect("initial load the lib");
-
-    loop {
-        lib.update().expect("lib update"); // will reload lib on change
-
-        unsafe {
-            lib.get_symbol::<fn()>(b"do_stuff\0")
-                .expect("Load do_stuff()")();
-        };
-
+        hot_lib::do_stuff(&mut state);
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 }
 ```
 
-### Running it
+#### Library
 
-To start compilation of the library:
+The library should expose functions. It should set the crate type `dylib` in `./lib/Cargo.toml`:
 
-```shell
-cargo watch -w lib -x 'build -p lib'
+```toml
+[package]
+name = "lib"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["rlib", "dylib"]
 ```
 
-And in addition to that start compilation of the binary with reload enabled:
+The functions you want to be reloadable should be public and have the `#[no_mangle]` attribute. Note that you can define other function that are not supposed to change without `no_mangle` and you will be able to use those alongside the other functions.
 
-```shell
-cargo watch -w bin -x run
+```rust
+pub struct State {
+    pub counter: usize,
+}
+
+#[no_mangle]
+pub fn do_stuff(state: &mut State) {
+    state.counter += 1;
+    println!("doing stuff in iteration {}", state.counter);
+}
 ```
 
-A change that you now make to `lib/lib.rs` will have an immediate effect on the app.
+#### Running it
+
+1. Start compilation of the library: `cargo watch -w lib -x 'build -p lib'`
+2. In another terminal run the executable: `cargo run`
+
+Now change for example the print statement in `lib/lib.rs` and see the effect on the runtime.
 
 
 
-## More examples
+## Usage tips
+
+
+### Know the limitations
+
+Reloading code from dynamic libraries comes with a number of caveats which are discussed in some detail [here](https://robert.kra.hn/posts/hot-reloading-rust/#caveats-and-asterisks).
+
+
+#### No signature changes
+
+When the signature of a hot-reloadable function changes, the parameter and result types the executable expects differ from what the library provides. In that case you'll likely see a crash.
+
+
+#### Type changes require some care
+
+Types of structs and enums that are used in both the executable and library cannot be freely changed. If the layout of types differs you run into undefined behavior which will likely result in a crash.
+
+See [use serialization](#use-serialization-or-generic-values-for-changing-types) for a way around it.
+
+
+#### Hot-reloadable functions cannot be generic
+
+Since `#[no_mangle]` does not support generics, generic functions can't be named / found in the library.
+
+#### Global state in reloadable code
+
+If your hot-reload library contains global state (or depends on a library that does), you will need to re-initialize it after reload. This can be a problem with libraries that hide the global state from the user. If you need to use global state, keep it inside the executable and pass it into the reloadable functions if possible.
+
+#### Rust nightly
+
+You currently need to use Rust nightly to run hot-reloadable code. The reason for that is that we currently need [the `proc_macro::Span` feature](https://github.com/rust-lang/rust/issues/54725). We are looking into a solution that works on stable.
+
+
+
+### Use feature flags to switch between hot-reload and static code
+
+See the [reload-feature example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature) for a complete project.
+
+Cargo allows to specify optional dependencies and conditional compilation through feature flags.
+When you define a feature like this
+
+```toml
+[features]
+default = []
+reload = ["dep:hot-lib-reloader"]
+
+[dependencies]
+hot-lib-reloader = { version = "^0.5", optional = true }
+```
+
+and then conditionally use either the normal or the hot module in the code calling the reloadable functions you can seamlessly switch between a static and hot-reloadable version of your application:
+
+```rust
+#[cfg(feature = "reload")]
+use hot_lib::*;
+#[cfg(not(feature = "reload"))]
+use lib::*;
+
+#[cfg(feature = "reload")]
+#[hot_lib_reloader::hot_module(dylib = "lib")]
+mod hot_lib { /*...*/ }
+```
+
+To run the static version just use `cargo run` the hot reloadable variant with `cargo run --features reload`.
+
+
+### Use serialization or generic values for changing types
+
+If you want to iterate on state while developing you have the option to serialize it. If you use a generic value representation such as [serde_json::Value](https://docs.rs/serde_json/latest/serde_json/value/enum.Value.html), you don't need string or binary formats and typically don't even need to clone anything.
+
+Here is an example where we crate a state container that has an inner `serde_json::Value`:
+
+```rust
+#[hot_lib_reloader::hot_module(dylib = "lib")]
+mod hot_lib {
+    pub use lib::State;
+    hot_functions_from_file!("../lib/src/lib.rs");
+}
+
+fn main() {
+    let mut state = hot_lib::State {
+        inner: serde_json::json!(null),
+    };
+
+    loop {
+        state = hot_lib::step(state);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
+}
+```
+
+In the library we are now able to change the value and type layout of `InnerState` as we wish:
+
+
+```rust
+#[derive(Debug)]
+pub struct State {
+    pub inner: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+struct InnerState {}
+
+#[no_mangle]
+pub fn step(state: State) -> State {
+    let inner: InnerState = serde_json::from_value(state.inner).unwrap_or(InnerState {});
+
+    // You can modify the InnerState layout freely and state.inner value here freely!
+
+    State {
+        inner: serde_json::to_value(inner).unwrap(),
+    }
+}
+```
+
+
+
+### Use a hot-reload friendly app structure
+
+Whether or not hot-reload is easy to use depends on how you architect your app. In particular, the ["functional core, imparative shell" pattern](https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell) makes it easy to split state and behavior and works well with `hot-lib-reloader`
+
+For example, for a simple game where you have the main loop in your control, setting up the outer state in the main function and then passing it into a `fn update(state: &mut State)` and a `fn render(state: &State)` is a straightforward way to get two hot-reloadable functions.
+
+But even when using a framework that takes control, chances are that there are ways to have it call hot-reloadable code. The [bevy example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy) where system functions can be made hot-reloadable, shows how this can work.
+
+
+
+### Code-completion with rust-analyzer
+
+Functions that get injected with automatic code generation that happens with `hot_functions_from_file!("path/to/file.rs");` won't be picked up by rust-analyzer and thus you don't have auto-completion for them.
+
+There is a different syntax available that allows you to define reloadable functions inline so that they get picked up by rust-analyzer:
+
+```rust
+#[hot_lib_reloader::hot_module(dylib = "lib")]
+mod hot_lib {
+    #[hot_functions]
+    extern "Rust" {
+        pub fn do_stuff();
+    }
+}
+```
+
+
+### Debugging
+
+If your `hot_module` gives you a strange compilation error, try `cargo expand` to see what code is generated.
+
+
+
+## Examples
 
 Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples).
 
 - [minimal](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/minimal): Bare-bones setup.
 - [reload-feature](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature): Use a feature to switch between dynamic and static version.
+- [serialized-state](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/serialized-state): Shows an option to allow to modify types and state freely.
 - [bevy](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy): Shows how to hot-reload bevy systems.
+
 
 
 ## Known issues
@@ -177,6 +317,8 @@ If you can, don't use `hot-lib-reloader` in combination with `tracing`.
 
 
 ## License
+
+[MIT](LICENSE)
 
 
 License: MIT

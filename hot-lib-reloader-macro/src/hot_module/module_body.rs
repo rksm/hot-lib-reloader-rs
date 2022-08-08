@@ -1,6 +1,6 @@
 use syn::{
-    spanned::Spanned, token, ForeignItemFn, Ident, Item, ItemMacro, LitStr, Macro, Result,
-    Visibility,
+    spanned::Spanned, token, Attribute, ForeignItemFn, Ident, Item, ItemMacro, LitStr, Macro,
+    Result, Visibility,
 };
 
 use super::code_gen::gen_hot_module_function_for;
@@ -12,27 +12,15 @@ pub(crate) struct HotModule {
     pub(crate) vis: Visibility,
     pub(crate) ident: Ident,
     pub(crate) items: Vec<Item>,
-    pub(crate) attributes: Option<super::HotModuleAttribute>,
+    #[allow(dead_code)]
+    pub(crate) attributes: Vec<Attribute>,
+    pub(crate) hot_module_args: Option<super::HotModuleAttribute>,
 }
 
-/// Parses something like
-/// ```ignore
-/// #[hot_module(name = "lib")]
-/// mod foo {
-///   /* ... */
-///   hot_functions_from_file!("../lib/src/lib.rs");
-///   /* ... */
-///   #[hot_function]
-///       pub fn do_stuff(arg: &str) -> u32 { /*generated*/ }
-///   /* ... */
-///   #[hot_functions]
-///   extern "Rust" {
-///       pub fn do_stuff(arg: &str) -> u32;
-///   }
-/// }
-/// ```
 impl syn::parse::Parse for HotModule {
     fn parse(stream: syn::parse::ParseStream) -> Result<Self> {
+        let attributes = syn::Attribute::parse_outer(stream)?;
+
         let vis = stream
             .parse::<syn::Visibility>()
             .unwrap_or(Visibility::Inherited);
@@ -119,7 +107,8 @@ impl syn::parse::Parse for HotModule {
             ident,
             vis,
             items,
-            attributes: None,
+            attributes,
+            hot_module_args: None,
         })
     }
 }
@@ -130,10 +119,11 @@ impl quote::ToTokens for HotModule {
             vis,
             ident,
             items,
-            attributes,
+            hot_module_args,
+            ..
         } = self;
 
-        let HotModuleAttribute { lib_name, lib_dir } = match attributes {
+        let HotModuleAttribute { lib_name, lib_dir } = match hot_module_args {
             None => panic!("Expected to have macro attributes"),
             Some(attributes) => attributes,
         };

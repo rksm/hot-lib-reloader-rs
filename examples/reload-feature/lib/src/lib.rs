@@ -1,11 +1,4 @@
-#[derive(Default, Debug)]
-pub struct State {
-    pub called: usize,
-}
-
 #[no_mangle]
-pub fn step(state: &mut State) {
+pub fn do_stuff() {
     println!("step called");
-
-    state.called += 1;
 }
