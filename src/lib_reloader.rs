@@ -20,7 +20,6 @@ pub struct LibReloader {
     lib_dir: PathBuf,
     lib_name: String,
     changed: Arc<atomic::AtomicBool>,
-    changed_at: Arc<Mutex<Option<Instant>>>,
     lib: Option<Library>,
     watched_lib_file: PathBuf,
     loaded_lib_file: PathBuf,
@@ -59,7 +58,6 @@ impl LibReloader {
             loaded_lib_file,
             lib,
             changed: Arc::new(atomic::AtomicBool::new(false)),
-            changed_at: Arc::new(Mutex::new(None)),
         };
 
         lib_loader.watch(watched_lib_file)?;
@@ -75,8 +73,7 @@ impl LibReloader {
         }
         self.changed.store(false, Ordering::Relaxed);
         self.reload()?;
-        let mut changed_at = self.changed_at.lock().unwrap();
-        *changed_at = Some(Instant::now());
+
         Ok(true)
     }
 
@@ -123,7 +120,6 @@ impl LibReloader {
         log::info!("start watching changes of file {}", lib_file.display());
 
         let changed = self.changed.clone();
-        let last_changed = self.changed_at.clone();
 
         // File watcher thread. We watch `self.lib_file`, when it changes and we haven't
         // a pending change still waiting to be loaded, set `self.changed` to true. This
@@ -138,25 +134,9 @@ impl LibReloader {
                 .expect("watch lib file");
 
             let debounce = Duration::from_millis(500);
-            let mut last_change = Instant::now() - debounce;
-            let mut signal_change = || {
-                let now = Instant::now();
-
-                if last_changed
-                    .try_lock()
-                    .ok()
-                    .and_then(|t| *t)
-                    .map(|t| now - t < debounce)
-                    .unwrap_or(false)
-                {
-                    return false;
-                }
-
+            let signal_change = || {
                 log::debug!("{} changed", lib_file.display());
-
-                last_change = now;
-                changed.store(true, Ordering::Relaxed);
-                last_changed.lock().unwrap().replace(Instant::now());
+                let _change_was_known = changed.swap(true, Ordering::Relaxed);
                 true
             };
 
