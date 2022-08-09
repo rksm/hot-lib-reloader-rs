@@ -2,4 +2,4 @@ commands:
   bin: |
     cargo watch -i lib -x run
   lib: |
-      cargo watch -w lib -x 'build -p lib'
+    cargo watch -w lib -x 'build -p lib'
