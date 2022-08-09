@@ -370,17 +370,7 @@ fn find_file_or_dir_in_parent_directories(
 }
 
 fn load_library(lib_file: impl AsRef<Path>) -> Result<Library, HotReloaderError> {
-    let lib_file: &Path = lib_file.as_ref();
-    // on macos in particular RTLD_LAZY | RTLD_LOCAL can give stale libs when re-loading
-    #[cfg(target_family = "unix")]
-    let lib = Library::from(unsafe {
-        use libloading::os::unix::RTLD_GLOBAL;
-        use libloading::os::unix::RTLD_NOW;
-        libloading::os::unix::Library::open(Some(lib_file.as_os_str()), RTLD_GLOBAL | RTLD_NOW)?
-    });
-    #[cfg(not(target_family = "unix"))]
-    let lib = unsafe { Library::new(&loaded_lib_file) }?;
-    Ok(lib)
+    Ok(unsafe { Library::new(lib_file.as_ref()) }?)
 }
 
 fn hash_file(f: impl AsRef<Path>) -> u32 {
