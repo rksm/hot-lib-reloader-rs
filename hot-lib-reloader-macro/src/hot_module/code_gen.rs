@@ -38,19 +38,22 @@ pub(crate) fn generate_lib_loader_items(
                 let lib_loader_for_update = lib_loader.clone();
                 let symbols_in_use = symbols_in_use();
 
+                // update thread that triggers the dylib to be actually updated
                 let _thread = ::std::thread::spawn(move || {
-
                     loop {
-                        if let Ok(_) = change_rx.recv() {
+                        if let Ok(::hot_lib_reloader::ChangedEvent::LibFileChanged) = change_rx.recv() {
                             // if there are pending function calls we have lended out symbols and can't
                             // reload the lib, otherwise those symbols would be dangling.
                             while symbols_in_use.load(::std::sync::atomic::Ordering::SeqCst) > 0 {
                                 println!("[hot-lib-loader] delaying update as symbols are currently in use");
                                 ::std::thread::sleep(::std::time::Duration::from_millis(500));
                             }
-
-                            if let Ok(mut lib_loader) = lib_loader_for_update.try_lock() {
-                                lib_loader.update().expect("hot lib update()");
+                            loop {
+                                if let Ok(mut lib_loader) = lib_loader_for_update.try_lock() {
+                                    let _ = !lib_loader.update().expect("hot lib update()");
+                                    break;
+                                }
+                                ::std::thread::sleep(::std::time::Duration::from_millis(20));
                             }
                         }
                     }

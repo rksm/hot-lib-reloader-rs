@@ -66,6 +66,7 @@ impl LibReloader {
         let lib = if watched_lib_file.exists() {
             // We don't load the actual lib because this can get problems e.g. on Windows
             // where a file lock would be held, preventing the lib from changing later.
+            log::debug!("copying {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(&watched_lib_file, &loaded_lib_file)?;
             Some(unsafe { Library::new(&loaded_lib_file) }?)
         } else {
@@ -99,6 +100,7 @@ impl LibReloader {
     /// Create a [ChangedEvent] receiver that gets signalled when the library
     /// changes.
     pub fn subscribe(&mut self) -> mpsc::Receiver<ChangedEvent> {
+        log::trace!("subscribe");
         let (tx, rx) = mpsc::channel();
         let mut subscribers = self.subscribers.lock().unwrap();
         subscribers.push(tx);
@@ -114,6 +116,10 @@ impl LibReloader {
         self.changed.store(false, Ordering::Relaxed);
         self.reload()?;
         if let Ok(subscribers) = self.subscribers.try_lock() {
+            log::trace!(
+                "sending ChangedEvent::LibReloaded to {} subscribers",
+                subscribers.len()
+            );
             for tx in &*subscribers {
                 let _ = tx.send(ChangedEvent::LibReloaded);
             }
@@ -147,7 +153,7 @@ impl LibReloader {
             *load_counter += 1;
             let (_, loaded_lib_file) =
                 watched_and_loaded_library_paths(lib_dir, lib_name, *load_counter);
-            log::debug!("copy {watched_lib_file:?} -> {loaded_lib_file:?}");
+            log::trace!("copy {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(watched_lib_file, &loaded_lib_file)?;
             self.lib = Some(unsafe { Library::new(&loaded_lib_file) }?);
             self.loaded_lib_file = loaded_lib_file;
@@ -184,6 +190,10 @@ impl LibReloader {
                 log::debug!("{} changed", lib_file.display());
                 changed.store(true, Ordering::Relaxed);
                 let subscribers = subscribers.lock().unwrap();
+                log::trace!(
+                    "sending ChangedEvent::LibFileChanged to {} subscribers",
+                    subscribers.len()
+                );
                 for tx in &*subscribers {
                     let _ = tx.send(ChangedEvent::LibFileChanged);
                 }
@@ -251,6 +261,7 @@ impl LibReloader {
 impl Drop for LibReloader {
     fn drop(&mut self) {
         if self.loaded_lib_file.exists() {
+            log::trace!("removing {:?}", self.loaded_lib_file);
             let _ = fs::remove_file(&self.loaded_lib_file);
         }
     }

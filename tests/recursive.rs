@@ -11,6 +11,10 @@ mod hot_lib {
 
 #[test]
 fn test() {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("trace"))
+        .is_test(true)
+        .init();
+
     let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
     assert_eq!(n, 5);
 
@@ -30,6 +34,9 @@ fn test() {
                     break;
                 }
             }
+
+            // FIXME, the event should be good enough...
+            std::thread::sleep(std::time::Duration::from_millis(250));
 
             let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
             assert_eq!(n, 7);
