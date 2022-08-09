@@ -2,6 +2,23 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.5.2]
+Added support for getting lib reload events.
+Inside a `hot_module`, the following creates a function that can be used to subscribe:
+```rust
+#[lib_change_subscription]
+pub fn subscribe() -> std::sync::mpsc::Receiver<hot_lib_reloader::ChangedEvent> {}
+```
+
+## [0.5.1]
+### Fixes file observation issues
+Using file hashes to figure out when a file actually changed, `notify` alone isn't enough.
+The file change strategies on the different OSes seem to be quite different.
+The lib might be removed or re-linked or simply overwritten.
+The file change events in each case are quite different and in the case of removal, `notify` does not always seem to get events when the file is recreated.
+In addition, on macOS copying `lib*.dylib` to `lib*-hot.dylib` seems to trigger a file change event for `lib*.dylib`...
+So using a hash is the simplest way to figure out if the dylib actually changed and provides a reliable way to trigger a recompile.
+
 ## [0.5.0]
 ### Added
 - added the `#[hot_module]` attribute macro

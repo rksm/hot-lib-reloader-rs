@@ -21,7 +21,7 @@ thiserror = "1.0.32"
 
 [dev-dependencies]
 env_logger = "^0.9"
-recursive_lib = { path = "tests/recursive_lib" }
+lib_for_testing = { path = "tests/lib_for_testing" }
 
 [workspace]
 resolver = "2"

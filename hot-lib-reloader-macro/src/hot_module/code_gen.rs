@@ -157,3 +157,32 @@ pub(crate) fn gen_hot_module_function_for(
 
     Ok(function)
 }
+
+// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+/// For something like
+/// ```ignore
+/// #[lib_change_subscription]
+/// pub fn rx() -> std::sync::mpsc::Receiver<hot_lib_reloader::ChangedEvent> {
+///     __lib_loader_subscription()
+/// }
+/// ```
+pub(crate) fn gen_lib_change_subscription_function(
+    f_decl: ForeignItemFn,
+    span: Span,
+) -> Result<ItemFn> {
+    let ForeignItemFn {
+        sig, vis, attrs, ..
+    } = f_decl;
+
+    Ok(ItemFn {
+        attrs,
+        vis,
+        sig,
+        block: syn::parse_quote_spanned! {span=>
+            {
+                __lib_loader_subscription()
+            }
+        },
+    })
+}

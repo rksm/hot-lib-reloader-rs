@@ -3,10 +3,11 @@ use syn::{
     Result, Visibility,
 };
 
-use super::code_gen::gen_hot_module_function_for;
+use super::code_gen::{
+    gen_hot_module_function_for, gen_lib_change_subscription_function, generate_lib_loader_items,
+};
+use super::HotModuleAttribute;
 use crate::util::read_unmangled_functions_from_file;
-
-use super::{code_gen::generate_lib_loader_items, HotModuleAttribute};
 
 pub(crate) struct HotModule {
     pub(crate) vis: Visibility,
@@ -49,6 +50,26 @@ impl syn::parse::Parse for HotModule {
                         let f = gen_hot_module_function_for(f, span)?;
                         items.push(Item::Fn(f));
                     }
+                }
+
+                // parses and code gens
+                // #[lib_change_subscription]
+                // pub fn subscribe() -> std::sync::mpsc::Receiver<hot_lib_reloader::ChangedEvent> {}
+                syn::Item::Fn(func)
+                    if func
+                        .attrs
+                        .iter()
+                        .any(|attr| attr.path.is_ident("lib_change_subscription")) =>
+                {
+                    let span = func.span();
+                    let f = ForeignItemFn {
+                        attrs: Vec::new(),
+                        vis: func.vis,
+                        sig: func.sig,
+                        semi_token: token::Semi::default(),
+                    };
+                    let f = gen_lib_change_subscription_function(f, span)?;
+                    items.push(Item::Fn(f));
                 }
 
                 // parses and code gens
