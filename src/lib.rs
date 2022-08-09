@@ -271,6 +271,24 @@ For example, for a simple game where you have the main loop in your control, set
 
 But even when using a framework that takes control, chances are that there are ways to have it call hot-reloadable code. The [bevy example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy) where system functions can be made hot-reloadable, shows how this can work.
 
+You can also wait for lib changes and run code afterwards.
+This is useful if you want to iterate over a program that only produces output once, for example work on a data analysis or visualization.
+This snippet shows how:
+
+```example
+#[hot_module(dylib = "lib")]
+mod hot_lib {
+    /*...*/
+    #[lib_change_subscription]
+    pub fn lib_reload_rx() -> mpsc::Receiver<ChangedEvent> {}
+}
+
+loop {
+    hot_lib::do_stuff();
+    // waits for a lib reload:
+    let event = rx.recv()?;
+}
+```
 
 
 ## Code-completion with rust-analyzer
@@ -303,6 +321,7 @@ Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/
 - [minimal](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/minimal): Bare-bones setup.
 - [reload-feature](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature): Use a feature to switch between dynamic and static version.
 - [serialized-state](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/serialized-state): Shows an option to allow to modify types and state freely.
+- [lib-reload-subscription](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/lib-reload-subscription): Do stuff when the library has changed.
 - [bevy](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy): Shows how to hot-reload bevy systems.
 
 

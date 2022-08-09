@@ -1,6 +1,6 @@
 [package]
 name = "hot-lib-reloader"
-version = "0.5.1"
+version = "0.5.2"
 categories = ["development-tools"]
 edition = "2021"
 exclude = [".dir-locals.el", "DEV.org", "doc/*"]
@@ -13,7 +13,7 @@ description = "Utility to reload libraries on change. For faster feedback cycles
 
 [dependencies]
 crc32fast = "1.3.2"
-hot-lib-reloader-macro = { version = "^0.5.1", path = "./hot-lib-reloader-macro" }
+hot-lib-reloader-macro = { version = "^0.5.2", path = "./hot-lib-reloader-macro" }
 libloading = "^0.7"
 log = "0.4.17"
 notify = "^4"
