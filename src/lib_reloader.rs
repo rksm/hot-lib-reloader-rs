@@ -13,7 +13,6 @@ use std::sync::Mutex;
 use std::sync::{mpsc, Arc};
 use std::thread;
 use std::time::Duration;
-use std::time::Instant;
 
 use crate::error::HotReloaderError;
 
@@ -37,7 +36,6 @@ pub struct LibReloader {
     lib_dir: PathBuf,
     lib_name: String,
     changed: Arc<AtomicBool>,
-    changed_at: Arc<Mutex<Option<Instant>>>,
     lib: Option<Library>,
     watched_lib_file: PathBuf,
     loaded_lib_file: PathBuf,
@@ -83,13 +81,11 @@ impl LibReloader {
 
         let lib_file_hash = Arc::new(AtomicU32::new(lib_file_hash));
         let changed = Arc::new(AtomicBool::new(false));
-        let changed_at = Arc::new(Mutex::new(None));
         let subscribers = Arc::new(Mutex::new(Vec::new()));
         Self::watch(
             watched_lib_file.clone(),
             lib_file_hash.clone(),
             changed.clone(),
-            changed_at.clone(),
             subscribers.clone(),
         )?;
 
@@ -102,7 +98,6 @@ impl LibReloader {
             lib,
             lib_file_hash,
             changed,
-            changed_at,
             subscribers,
         };
 
@@ -138,9 +133,6 @@ impl LibReloader {
                 let _ = tx.send(ChangedEvent::LibReloaded);
             }
         }
-
-        let mut changed_at = self.changed_at.lock().unwrap();
-        *changed_at = Some(Instant::now());
 
         Ok(true)
     }
@@ -189,7 +181,6 @@ impl LibReloader {
         lib_file: impl AsRef<Path>,
         lib_file_hash: Arc<AtomicU32>,
         changed: Arc<AtomicBool>,
-        changed_at: Arc<Mutex<Option<Instant>>>,
         subscribers: Arc<Mutex<Vec<mpsc::Sender<ChangedEvent>>>>,
     ) -> Result<(), HotReloaderError> {
         let lib_file = lib_file.as_ref().to_path_buf();
@@ -208,32 +199,15 @@ impl LibReloader {
                 .expect("watch lib file");
 
             let debounce = Duration::from_millis(500);
-            let mut last_change = Instant::now() - debounce;
-            let mut signal_change = || {
-                let now = Instant::now();
-
+            let signal_change = || {
                 if hash_file(&lib_file) == lib_file_hash.load(Ordering::Relaxed) {
                     // file not changed
                     return false;
                 }
 
-                // On macOS we get signaled that `lib_file` has changed even when copying it...
-                // This custom debounce code takes care to not run into an endless change loop.
-                if changed_at
-                    .try_lock()
-                    .ok()
-                    .and_then(|t| *t)
-                    .map(|t| now - t < debounce)
-                    .unwrap_or(false)
-                {
-                    return false;
-                }
-
                 log::debug!("{lib_file:?} changed",);
 
-                last_change = now;
                 changed.store(true, Ordering::Relaxed);
-                changed_at.lock().unwrap().replace(Instant::now());
 
                 // inform subscribers
                 let subscribers = subscribers.lock().unwrap();
