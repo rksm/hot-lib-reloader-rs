@@ -1,10 +1,13 @@
 pub fn recompile(dir: impl AsRef<std::path::Path>) {
-    std::process::Command::new("cargo")
+    let cmd = std::process::Command::new("cargo")
         .arg("build")
         .current_dir(dir)
         .spawn()
         .and_then(|proc| proc.wait_with_output())
         .expect("cargo build failed");
+    println!("[STDOUT] {}", String::from_utf8_lossy(&cmd.stdout));
+    println!("[STDERR] {}", String::from_utf8_lossy(&cmd.stderr));
+    println!("DONE");
 }
 
 pub fn modify_file_and_do(

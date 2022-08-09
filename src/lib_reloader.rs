@@ -70,7 +70,7 @@ impl LibReloader {
             // where a file lock would be held, preventing the lib from changing later.
             log::debug!("copying {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(&watched_lib_file, &loaded_lib_file)?;
-            Some(unsafe { Library::new(&loaded_lib_file) }?)
+            Some(load_library(&loaded_lib_file)?)
         } else {
             log::debug!("library {watched_lib_file:?} does not yet exist");
             None
@@ -166,7 +166,7 @@ impl LibReloader {
                 watched_and_loaded_library_paths(lib_dir, lib_name, *load_counter);
             log::trace!("copy {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(watched_lib_file, &loaded_lib_file)?;
-            self.lib = Some(unsafe { Library::new(&loaded_lib_file) }?);
+            self.lib = Some(load_library(&loaded_lib_file)?);
             self.loaded_lib_file = loaded_lib_file;
         } else {
             log::warn!("trying to reload library but it does not exist");
@@ -352,4 +352,18 @@ fn find_file_or_dir_in_parent_directories(
         )
         .into())
     }
+}
+
+fn load_library(lib_file: impl AsRef<Path>) -> Result<Library, HotReloaderError> {
+    let lib_file: &Path = lib_file.as_ref();
+    // on macos in particular RTLD_LAZY | RTLD_LOCAL can give stale libs when re-loading
+    #[cfg(target_family = "unix")]
+    let lib = Library::from(unsafe {
+        use libloading::os::unix::RTLD_GLOBAL;
+        use libloading::os::unix::RTLD_NOW;
+        libloading::os::unix::Library::open(Some(lib_file.as_os_str()), RTLD_GLOBAL | RTLD_NOW)?
+    });
+    #[cfg(not(target_family = "unix"))]
+    let lib = unsafe { Library::new(&loaded_lib_file) }?;
+    Ok(lib)
 }
