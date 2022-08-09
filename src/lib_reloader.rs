@@ -16,9 +16,11 @@ use std::time::Duration;
 use crate::error::HotReloaderError;
 
 /// Signals when the library has changed.
+#[derive(Debug)]
 #[non_exhaustive]
 pub enum ChangedEvent {
-    LibChanged,
+    LibFileChanged,
+    LibReloaded,
 }
 
 /// Manages a [libloading::Library] and watches a library (dylib) file.
@@ -111,7 +113,11 @@ impl LibReloader {
         }
         self.changed.store(false, Ordering::Relaxed);
         self.reload()?;
-
+        if let Ok(subscribers) = self.subscribers.try_lock() {
+            for tx in &*subscribers {
+                let _ = tx.send(ChangedEvent::LibReloaded);
+            }
+        }
         Ok(true)
     }
 
@@ -179,7 +185,7 @@ impl LibReloader {
                 changed.store(true, Ordering::Relaxed);
                 let subscribers = subscribers.lock().unwrap();
                 for tx in &*subscribers {
-                    let _ = tx.send(ChangedEvent::LibChanged);
+                    let _ = tx.send(ChangedEvent::LibFileChanged);
                 }
                 true
             };

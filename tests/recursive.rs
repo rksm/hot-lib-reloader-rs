@@ -25,7 +25,11 @@ fn test() {
         || {
             let rx = hot_lib::rx();
             common::recompile("tests/recursive_lib");
-            rx.recv().expect("waiting for detected change");
+            while let Ok(event) = rx.recv() {
+                if matches!(event, hot_lib_reloader::ChangedEvent::LibReloaded) {
+                    break;
+                }
+            }
 
             let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
             assert_eq!(n, 7);
