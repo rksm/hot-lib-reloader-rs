@@ -9,8 +9,10 @@ This package tries to adhere to [semver](https://semver.org/).
 - provide hot reloadable functions as part of the hot_module with the identical interface they normally have
 - tests & CI setup
 - more documentation and examples
+- Subscribe to lib changes with `__lib_loader_subscription()`
 ### Changed
 - deprecated `define_lib_reloader`
+- lib reloader updates via events
 
 
 ## [0.4.4]
