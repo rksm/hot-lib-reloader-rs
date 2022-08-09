@@ -33,7 +33,7 @@ pub(crate) fn generate_lib_loader_items(
             LIB_LOADER_INIT.call_once(|| {
                 let mut lib_loader = ::hot_lib_reloader::LibReloader::new(#lib_dir, #lib_name)
                     .expect("failed to create hot reload loader");
-                let change_rx = lib_loader.subscribe();
+                let change_rx = lib_loader.subscribe_to_file_changes();
                 let lib_loader = ::std::sync::Arc::new(::std::sync::Mutex::new(lib_loader));
                 let lib_loader_for_update = lib_loader.clone();
                 let symbols_in_use = symbols_in_use();
@@ -41,7 +41,7 @@ pub(crate) fn generate_lib_loader_items(
                 // update thread that triggers the dylib to be actually updated
                 let _thread = ::std::thread::spawn(move || {
                     loop {
-                        if let Ok(::hot_lib_reloader::ChangedEvent::LibFileChanged) = change_rx.recv() {
+                        if let Ok(()) = change_rx.recv() {
                             // if there are pending function calls we have lended out symbols and can't
                             // reload the lib, otherwise those symbols would be dangling.
                             while symbols_in_use.load(::std::sync::atomic::Ordering::SeqCst) > 0 {
