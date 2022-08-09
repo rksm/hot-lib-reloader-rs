@@ -36,7 +36,7 @@ fn test() {
             }
 
             // FIXME, the event should be good enough...
-            std::thread::sleep(std::time::Duration::from_millis(250));
+            std::thread::sleep(std::time::Duration::from_millis(750));
 
             let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
             assert_eq!(n, 7);
