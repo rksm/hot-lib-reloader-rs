@@ -12,6 +12,7 @@ use std::sync::Mutex;
 use std::sync::{atomic, mpsc, Arc};
 use std::thread;
 use std::time::Duration;
+use std::time::Instant;
 
 use crate::error::HotReloaderError;
 
@@ -35,6 +36,7 @@ pub struct LibReloader {
     lib_dir: PathBuf,
     lib_name: String,
     changed: Arc<atomic::AtomicBool>,
+    changed_at: Arc<Mutex<Option<Instant>>>,
     lib: Option<Library>,
     watched_lib_file: PathBuf,
     loaded_lib_file: PathBuf,
@@ -75,11 +77,13 @@ impl LibReloader {
         };
 
         let changed = Arc::new(atomic::AtomicBool::new(false));
+        let changed_at = Arc::new(Mutex::new(None));
 
         let subscribers = Arc::new(Mutex::new(Vec::new()));
         Self::watch(
             watched_lib_file.clone(),
             changed.clone(),
+            changed_at.clone(),
             subscribers.clone(),
         )?;
 
@@ -91,6 +95,7 @@ impl LibReloader {
             loaded_lib_file,
             lib,
             changed,
+            changed_at,
             subscribers,
         };
 
@@ -110,11 +115,13 @@ impl LibReloader {
     /// Checks if the watched library has changed. If it has, reload it and return
     /// true. Otherwise return false.
     pub fn update(&mut self) -> Result<bool, HotReloaderError> {
-        if !self.changed.load(Ordering::Relaxed) {
+        if !self.changed.load(Ordering::SeqCst) {
             return Ok(false);
         }
-        self.changed.store(false, Ordering::Relaxed);
+        self.changed.store(false, Ordering::SeqCst);
+
         self.reload()?;
+
         if let Ok(subscribers) = self.subscribers.try_lock() {
             log::trace!(
                 "sending ChangedEvent::LibReloaded to {} subscribers",
@@ -124,6 +131,10 @@ impl LibReloader {
                 let _ = tx.send(ChangedEvent::LibReloaded);
             }
         }
+
+        let mut changed_at = self.changed_at.lock().unwrap();
+        *changed_at = Some(Instant::now());
+
         Ok(true)
     }
 
@@ -168,6 +179,7 @@ impl LibReloader {
     fn watch(
         lib_file: impl AsRef<Path>,
         changed: Arc<AtomicBool>,
+        changed_at: Arc<Mutex<Option<Instant>>>,
         subscribers: Arc<Mutex<Vec<mpsc::Sender<ChangedEvent>>>>,
     ) -> Result<(), HotReloaderError> {
         let lib_file = lib_file.as_ref().to_path_buf();
@@ -186,9 +198,29 @@ impl LibReloader {
                 .expect("watch lib file");
 
             let debounce = Duration::from_millis(500);
-            let signal_change = || {
-                log::debug!("{} changed", lib_file.display());
+            let mut last_change = Instant::now() - debounce;
+            let mut signal_change = || {
+                let now = Instant::now();
+
+                // On macOS we get signaled that `lib_file` has changed even when copying it...
+                // This custom debounce code takes care to not run into an endless change loop.
+                if changed_at
+                    .try_lock()
+                    .ok()
+                    .and_then(|t| *t)
+                    .map(|t| now - t < debounce)
+                    .unwrap_or(false)
+                {
+                    return false;
+                }
+
+                log::debug!("{lib_file:?} changed",);
+
+                last_change = now;
                 changed.store(true, Ordering::Relaxed);
+                changed_at.lock().unwrap().replace(Instant::now());
+
+                // inform subscribers
                 let subscribers = subscribers.lock().unwrap();
                 log::trace!(
                     "sending ChangedEvent::LibFileChanged to {} subscribers",
@@ -197,6 +229,7 @@ impl LibReloader {
                 for tx in &*subscribers {
                     let _ = tx.send(ChangedEvent::LibFileChanged);
                 }
+
                 true
             };
 

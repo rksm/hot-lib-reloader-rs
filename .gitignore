@@ -7,3 +7,4 @@ DEV.org
 /.idea/
 /examples/macro-test.rs
 /examples/input-files/
+.DS_Store
