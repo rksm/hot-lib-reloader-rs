@@ -20,7 +20,6 @@ use crate::error::HotReloaderError;
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum ChangedEvent {
-    LibFileChanged,
     LibReloaded,
 }
 
@@ -40,7 +39,8 @@ pub struct LibReloader {
     watched_lib_file: PathBuf,
     loaded_lib_file: PathBuf,
     lib_file_hash: Arc<AtomicU32>,
-    subscribers: Arc<Mutex<Vec<mpsc::Sender<ChangedEvent>>>>,
+    lib_reloaded_subscribers: Arc<Mutex<Vec<mpsc::Sender<ChangedEvent>>>>,
+    file_change_subscribers: Arc<Mutex<Vec<mpsc::Sender<()>>>>,
 }
 
 impl LibReloader {
@@ -81,12 +81,12 @@ impl LibReloader {
 
         let lib_file_hash = Arc::new(AtomicU32::new(lib_file_hash));
         let changed = Arc::new(AtomicBool::new(false));
-        let subscribers = Arc::new(Mutex::new(Vec::new()));
+        let file_change_subscribers = Arc::new(Mutex::new(Vec::new()));
         Self::watch(
             watched_lib_file.clone(),
             lib_file_hash.clone(),
             changed.clone(),
-            subscribers.clone(),
+            file_change_subscribers.clone(),
         )?;
 
         let lib_loader = Self {
@@ -98,7 +98,8 @@ impl LibReloader {
             lib,
             lib_file_hash,
             changed,
-            subscribers,
+            lib_reloaded_subscribers: Arc::new(Mutex::new(Vec::new())),
+            file_change_subscribers,
         };
 
         Ok(lib_loader)
@@ -107,9 +108,18 @@ impl LibReloader {
     /// Create a [ChangedEvent] receiver that gets signalled when the library
     /// changes.
     pub fn subscribe(&mut self) -> mpsc::Receiver<ChangedEvent> {
-        log::trace!("subscribe");
+        log::trace!("subscribe to lib change");
         let (tx, rx) = mpsc::channel();
-        let mut subscribers = self.subscribers.lock().unwrap();
+        let mut subscribers = self.lib_reloaded_subscribers.lock().unwrap();
+        subscribers.push(tx);
+        rx
+    }
+
+    #[doc(hidden)]
+    pub fn subscribe_to_file_changes(&mut self) -> mpsc::Receiver<()> {
+        log::trace!("subscribe to file change");
+        let (tx, rx) = mpsc::channel();
+        let mut subscribers = self.file_change_subscribers.lock().unwrap();
         subscribers.push(tx);
         rx
     }
@@ -124,7 +134,7 @@ impl LibReloader {
 
         self.reload()?;
 
-        if let Ok(subscribers) = self.subscribers.try_lock() {
+        if let Ok(subscribers) = self.lib_reloaded_subscribers.try_lock() {
             log::trace!(
                 "sending ChangedEvent::LibReloaded to {} subscribers",
                 subscribers.len()
@@ -181,7 +191,7 @@ impl LibReloader {
         lib_file: impl AsRef<Path>,
         lib_file_hash: Arc<AtomicU32>,
         changed: Arc<AtomicBool>,
-        subscribers: Arc<Mutex<Vec<mpsc::Sender<ChangedEvent>>>>,
+        file_change_subscribers: Arc<Mutex<Vec<mpsc::Sender<()>>>>,
     ) -> Result<(), HotReloaderError> {
         let lib_file = lib_file.as_ref().to_path_buf();
         log::info!("start watching changes of file {}", lib_file.display());
@@ -210,13 +220,13 @@ impl LibReloader {
                 changed.store(true, Ordering::Relaxed);
 
                 // inform subscribers
-                let subscribers = subscribers.lock().unwrap();
+                let subscribers = file_change_subscribers.lock().unwrap();
                 log::trace!(
                     "sending ChangedEvent::LibFileChanged to {} subscribers",
                     subscribers.len()
                 );
                 for tx in &*subscribers {
-                    let _ = tx.send(ChangedEvent::LibFileChanged);
+                    let _ = tx.send(());
                 }
 
                 true

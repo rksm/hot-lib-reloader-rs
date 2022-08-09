@@ -1,5 +1,5 @@
 [package]
-name = "recursive_lib"
+name = "lib_for_testing"
 version = "0.1.0"
 edition = "2021"
 
