@@ -3,6 +3,10 @@ mod common;
 #[hot_lib_reloader::hot_module(dylib = "recursive_lib")]
 mod hot_lib {
     hot_functions_from_file!("./recursive_lib/src/lib.rs");
+
+    pub fn rx() -> std::sync::mpsc::Receiver<hot_lib_reloader::ChangedEvent> {
+        __lib_loader_subscription()
+    }
 }
 
 #[test]
@@ -19,8 +23,9 @@ fn test() {
             )
         },
         || {
+            let rx = hot_lib::rx();
             common::recompile("tests/recursive_lib");
-            std::thread::sleep(std::time::Duration::from_secs(1));
+            rx.recv().expect("waiting for detected change");
 
             let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
             assert_eq!(n, 7);

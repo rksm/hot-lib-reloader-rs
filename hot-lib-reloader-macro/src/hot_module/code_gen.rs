@@ -29,30 +29,29 @@ pub(crate) fn generate_lib_loader_items(
         static mut LIB_LOADER: Option<::std::sync::Arc<::std::sync::Mutex<::hot_lib_reloader::LibReloader>>> = None;
         static LIB_LOADER_INIT: ::std::sync::Once = ::std::sync::Once::new();
 
-        fn lib_loader() -> ::std::sync::Arc<::std::sync::Mutex<::hot_lib_reloader::LibReloader>> {
+        fn __lib_loader() -> ::std::sync::Arc<::std::sync::Mutex<::hot_lib_reloader::LibReloader>> {
             LIB_LOADER_INIT.call_once(|| {
-                let lib_loader = ::hot_lib_reloader::LibReloader::new(#lib_dir, #lib_name)
+                let mut lib_loader = ::hot_lib_reloader::LibReloader::new(#lib_dir, #lib_name)
                     .expect("failed to create hot reload loader");
-
-                let symbols_in_use = symbols_in_use();
+                let change_rx = lib_loader.subscribe();
                 let lib_loader = ::std::sync::Arc::new(::std::sync::Mutex::new(lib_loader));
                 let lib_loader_for_update = lib_loader.clone();
+                let symbols_in_use = symbols_in_use();
 
                 let _thread = ::std::thread::spawn(move || {
-                    const UPDATE_TIMEOUT: ::std::time::Duration =
-                        ::std::time::Duration::from_millis(600);
 
                     loop {
-                        ::std::thread::sleep(UPDATE_TIMEOUT);
+                        if let Ok(_) = change_rx.recv() {
+                            // if there are pending function calls we have lended out symbols and can't
+                            // reload the lib, otherwise those symbols would be dangling.
+                            while symbols_in_use.load(::std::sync::atomic::Ordering::SeqCst) > 0 {
+                                println!("[hot-lib-loader] delaying update as symbols are currently in use");
+                                ::std::thread::sleep(::std::time::Duration::from_millis(500));
+                            }
 
-                        // if there are pending function calls we have lended out symbols and can't
-                        // reload the lib, otherwise those symbols would be dangling.
-                        if symbols_in_use.load(::std::sync::atomic::Ordering::SeqCst) > 0 {
-                            continue;
-                        }
-
-                        if let Ok(mut lib_loader) = lib_loader_for_update.try_lock() {
-                            lib_loader.update().expect("hot lib update()");
+                            if let Ok(mut lib_loader) = lib_loader_for_update.try_lock() {
+                                lib_loader.update().expect("hot lib update()");
+                            }
                         }
                     }
                 });
@@ -66,6 +65,12 @@ pub(crate) fn generate_lib_loader_items(
 
             // Safety: Once runs before and initializes the global
             unsafe { LIB_LOADER.as_ref().cloned().unwrap() }
+        }
+
+        fn __lib_loader_subscription() -> ::std::sync::mpsc::Receiver<::hot_lib_reloader::ChangedEvent> {
+            let lib_loader = __lib_loader();
+            let mut lib_loader = lib_loader.lock().expect("lib loader mutex unlock failed");
+            lib_loader.subscribe()
         }
     };
 
@@ -116,7 +121,7 @@ pub(crate) fn gen_hot_module_function_for(
     let block = syn::parse_quote! {
         {
             let sym = {
-                let lib_loader = lib_loader();
+                let lib_loader = __lib_loader();
                 let lib_loader = lib_loader.lock().expect("lib loader mutex unlock failed");
                 let sym = unsafe {
                     lib_loader

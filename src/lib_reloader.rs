@@ -6,15 +6,28 @@ use notify::RecursiveMode;
 use notify::Watcher;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Mutex;
 use std::sync::{atomic, mpsc, Arc};
 use std::thread;
 use std::time::Duration;
-use std::time::Instant;
 
 use crate::error::HotReloaderError;
 
+/// Signals when the library has changed.
+#[non_exhaustive]
+pub enum ChangedEvent {
+    LibChanged,
+}
+
+/// Manages a [libloading::Library] and watches a library (dylib) file.
+///
+/// Will not automatically reload it but when the file changes the LibReloader
+/// can signal that with a [ChangedEvent]. Users are expected to call
+/// [LibReloader::update] themselves to actually reload the library.
+///
+/// It can load symbols from the library with [LibReloader::get_symbol].
 pub struct LibReloader {
     load_counter: usize,
     lib_dir: PathBuf,
@@ -23,9 +36,17 @@ pub struct LibReloader {
     lib: Option<Library>,
     watched_lib_file: PathBuf,
     loaded_lib_file: PathBuf,
+    subscribers: Arc<Mutex<Vec<mpsc::Sender<ChangedEvent>>>>,
 }
 
 impl LibReloader {
+    /// Creates a LibReloader.
+    ///  `lib_dir` is expected to be the location where the library to use can
+    /// be found. Probably `target/debug` normally.
+    /// `lib_name` is the name of the library, not(!) the file name. It should
+    /// normally be just the crate name of the cargo project you want to hot-reload.
+    /// LibReloader will take care to figure out the actual file name with
+    /// platform-specific prefix and extension.
     pub fn new(
         lib_dir: impl AsRef<Path>,
         lib_name: impl AsRef<str>,
@@ -50,19 +71,36 @@ impl LibReloader {
             None
         };
 
+        let changed = Arc::new(atomic::AtomicBool::new(false));
+
+        let subscribers = Arc::new(Mutex::new(Vec::new()));
+        Self::watch(
+            watched_lib_file.clone(),
+            changed.clone(),
+            subscribers.clone(),
+        )?;
+
         let lib_loader = Self {
             load_counter,
             lib_dir,
             lib_name: lib_name.as_ref().to_string(),
-            watched_lib_file: watched_lib_file.clone(),
+            watched_lib_file,
             loaded_lib_file,
             lib,
-            changed: Arc::new(atomic::AtomicBool::new(false)),
+            changed,
+            subscribers,
         };
 
-        lib_loader.watch(watched_lib_file)?;
-
         Ok(lib_loader)
+    }
+
+    /// Create a [ChangedEvent] receiver that gets signalled when the library
+    /// changes.
+    pub fn subscribe(&mut self) -> mpsc::Receiver<ChangedEvent> {
+        let (tx, rx) = mpsc::channel();
+        let mut subscribers = self.subscribers.lock().unwrap();
+        subscribers.push(tx);
+        rx
     }
 
     /// Checks if the watched library has changed. If it has, reload it and return
@@ -115,11 +153,13 @@ impl LibReloader {
     }
 
     /// Watch for changes of `lib_file`.
-    fn watch(&self, lib_file: impl AsRef<Path>) -> Result<(), HotReloaderError> {
+    fn watch(
+        lib_file: impl AsRef<Path>,
+        changed: Arc<AtomicBool>,
+        subscribers: Arc<Mutex<Vec<mpsc::Sender<ChangedEvent>>>>,
+    ) -> Result<(), HotReloaderError> {
         let lib_file = lib_file.as_ref().to_path_buf();
         log::info!("start watching changes of file {}", lib_file.display());
-
-        let changed = self.changed.clone();
 
         // File watcher thread. We watch `self.lib_file`, when it changes and we haven't
         // a pending change still waiting to be loaded, set `self.changed` to true. This
@@ -136,7 +176,11 @@ impl LibReloader {
             let debounce = Duration::from_millis(500);
             let signal_change = || {
                 log::debug!("{} changed", lib_file.display());
-                let _change_was_known = changed.swap(true, Ordering::Relaxed);
+                changed.store(true, Ordering::Relaxed);
+                let subscribers = subscribers.lock().unwrap();
+                for tx in &*subscribers {
+                    let _ = tx.send(ChangedEvent::LibChanged);
+                }
                 true
             };
 
@@ -197,6 +241,7 @@ impl LibReloader {
     }
 }
 
+/// Deletes the currently loaded lib file if it exists
 impl Drop for LibReloader {
     fn drop(&mut self) {
         if self.loaded_lib_file.exists() {

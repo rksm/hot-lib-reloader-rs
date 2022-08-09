@@ -321,7 +321,7 @@ If you can, don't use `hot-lib-reloader` in combination with `tracing`.
 
 # License
 
-[MIT](LICENSE)
+[MIT](https://github.com/rksm/hot-lib-reloader-rs/blob/hot-module/LICENSE)
 
 */
 
@@ -330,4 +330,4 @@ mod lib_reloader;
 
 pub use error::HotReloaderError;
 pub use hot_lib_reloader_macro::{define_lib_reloader, hot_module};
-pub use lib_reloader::LibReloader;
+pub use lib_reloader::{ChangedEvent, LibReloader};
