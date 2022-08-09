@@ -320,7 +320,7 @@ If you can, don't use `hot-lib-reloader` in combination with `tracing`.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/rksm/hot-lib-reloader-rs/blob/hot-module/LICENSE)
 
 
 License: MIT
