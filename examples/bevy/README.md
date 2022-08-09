@@ -20,7 +20,7 @@ Alternatively with a tool like [runcc](https://crates.io/crates/runcc) you can r
 
 ```shell
 $ cargo watch -w systems -w components -x "build -p systems --features dynamic"
-$ env CARGO_TARGET_DIR="target-bin" cargo run --features reload
+$ powershell -Command "& { $env:CARGO_TARGET_DIR='target-bin'; cargo run --features reload }"
 ```
 
 Alternatively with [runcc](https://crates.io/crates/runcc): `cargo runcc -c runcc-windows.yml`

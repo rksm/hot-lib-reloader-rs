@@ -1,5 +1,5 @@
 commands:
   bin: |
-    env CARGO_TARGET_DIR="target-bin" cargo run --features reload
+    powershell -Command "& { $env:CARGO_TARGET_DIR='target-bin'; cargo run --features reload }"
   systems: |
     cargo watch -w systems -w components -x "build -p systems --features dynamic"
