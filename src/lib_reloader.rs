@@ -7,9 +7,10 @@ use notify::Watcher;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicU32;
 use std::sync::atomic::Ordering;
 use std::sync::Mutex;
-use std::sync::{atomic, mpsc, Arc};
+use std::sync::{mpsc, Arc};
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
@@ -35,11 +36,12 @@ pub struct LibReloader {
     load_counter: usize,
     lib_dir: PathBuf,
     lib_name: String,
-    changed: Arc<atomic::AtomicBool>,
+    changed: Arc<AtomicBool>,
     changed_at: Arc<Mutex<Option<Instant>>>,
     lib: Option<Library>,
     watched_lib_file: PathBuf,
     loaded_lib_file: PathBuf,
+    lib_file_hash: Arc<AtomicU32>,
     subscribers: Arc<Mutex<Vec<mpsc::Sender<ChangedEvent>>>>,
 }
 
@@ -65,23 +67,27 @@ impl LibReloader {
         let (watched_lib_file, loaded_lib_file) =
             watched_and_loaded_library_paths(&lib_dir, &lib_name, load_counter);
 
-        let lib = if watched_lib_file.exists() {
+        let (lib_file_hash, lib) = if watched_lib_file.exists() {
             // We don't load the actual lib because this can get problems e.g. on Windows
             // where a file lock would be held, preventing the lib from changing later.
             log::debug!("copying {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(&watched_lib_file, &loaded_lib_file)?;
-            Some(load_library(&loaded_lib_file)?)
+            (
+                hash_file(&loaded_lib_file),
+                Some(load_library(&loaded_lib_file)?),
+            )
         } else {
             log::debug!("library {watched_lib_file:?} does not yet exist");
-            None
+            (0, None)
         };
 
-        let changed = Arc::new(atomic::AtomicBool::new(false));
+        let lib_file_hash = Arc::new(AtomicU32::new(lib_file_hash));
+        let changed = Arc::new(AtomicBool::new(false));
         let changed_at = Arc::new(Mutex::new(None));
-
         let subscribers = Arc::new(Mutex::new(Vec::new()));
         Self::watch(
             watched_lib_file.clone(),
+            lib_file_hash.clone(),
             changed.clone(),
             changed_at.clone(),
             subscribers.clone(),
@@ -94,6 +100,7 @@ impl LibReloader {
             watched_lib_file,
             loaded_lib_file,
             lib,
+            lib_file_hash,
             changed,
             changed_at,
             subscribers,
@@ -166,6 +173,8 @@ impl LibReloader {
                 watched_and_loaded_library_paths(lib_dir, lib_name, *load_counter);
             log::trace!("copy {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(watched_lib_file, &loaded_lib_file)?;
+            self.lib_file_hash
+                .store(hash_file(&loaded_lib_file), Ordering::Relaxed);
             self.lib = Some(load_library(&loaded_lib_file)?);
             self.loaded_lib_file = loaded_lib_file;
         } else {
@@ -178,6 +187,7 @@ impl LibReloader {
     /// Watch for changes of `lib_file`.
     fn watch(
         lib_file: impl AsRef<Path>,
+        lib_file_hash: Arc<AtomicU32>,
         changed: Arc<AtomicBool>,
         changed_at: Arc<Mutex<Option<Instant>>>,
         subscribers: Arc<Mutex<Vec<mpsc::Sender<ChangedEvent>>>>,
@@ -201,6 +211,11 @@ impl LibReloader {
             let mut last_change = Instant::now() - debounce;
             let mut signal_change = || {
                 let now = Instant::now();
+
+                if hash_file(&lib_file) == lib_file_hash.load(Ordering::Relaxed) {
+                    // file not changed
+                    return false;
+                }
 
                 // On macOS we get signaled that `lib_file` has changed even when copying it...
                 // This custom debounce code takes care to not run into an endless change loop.
@@ -251,7 +266,7 @@ impl LibReloader {
                                 .watch(&lib_file, RecursiveMode::NonRecursive)
                                 .is_ok()
                             {
-                                log::info!("watching {}", lib_file.display());
+                                log::info!("watching {lib_file:?} again after removal");
                                 signal_change();
                                 break;
                             }
@@ -366,4 +381,10 @@ fn load_library(lib_file: impl AsRef<Path>) -> Result<Library, HotReloaderError>
     #[cfg(not(target_family = "unix"))]
     let lib = unsafe { Library::new(&loaded_lib_file) }?;
     Ok(lib)
+}
+
+fn hash_file(f: impl AsRef<Path>) -> u32 {
+    fs::read(f.as_ref())
+        .map(|content| crc32fast::hash(&content))
+        .unwrap_or_default()
 }
