@@ -5,9 +5,12 @@ mod hot_lib {
 }
 
 fn main() {
-    let mut state = hot_lib::State { counter: 0 };
+    let mut state = hot_lib::State {
+        inner: serde_json::json!(null),
+    };
+
     loop {
-        hot_lib::do_stuff(&mut state);
+        state = hot_lib::step(state);
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 }

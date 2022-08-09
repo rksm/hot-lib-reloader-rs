@@ -23,7 +23,7 @@ pub fn generate_lib_reloader_struct(
         }
 
         impl #name {
-            pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+            pub fn new() -> Result<Self, ::hot_lib_reloader::HotReloaderError> {
                 Ok(Self {
                     lib_loader: ::hot_lib_reloader::LibReloader::new(#lib_dir, #lib_name)?,
                 })
@@ -31,7 +31,7 @@ pub fn generate_lib_reloader_struct(
 
             /// Checks if the watched library has changed. If it has, reload it and return
             /// true. Otherwise return false.
-            pub fn update(&mut self) -> Result<bool, Box<dyn std::error::Error>> {
+            pub fn update(&mut self) -> Result<bool, ::hot_lib_reloader::HotReloaderError> {
                 self.lib_loader.update()
             }
 

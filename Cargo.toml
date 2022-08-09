@@ -16,9 +16,11 @@ hot-lib-reloader-macro = { version = "0.4.4", path = "./hot-lib-reloader-macro" 
 libloading = { version = "^0.7" }
 log = "0.4.17"
 notify = { version = "^4" }
+thiserror = "1.0.32"
 
 [dev-dependencies]
 env_logger = "^0.9"
+recursive_lib = { path = "tests/recursive_lib" }
 
 [workspace]
 resolver = "2"

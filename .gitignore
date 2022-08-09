@@ -4,4 +4,6 @@ Cargo.lock
 /.dir-locals.el
 DEV.org
 *.org
-examples/bevy-extended/
+/.idea/
+/examples/macro-test.rs
+/examples/input-files/
