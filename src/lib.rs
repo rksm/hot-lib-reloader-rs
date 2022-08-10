@@ -81,7 +81,9 @@ hot-lib-reloader = "^0.5"
 lib = { path = "lib" }
 ```
 
-In `./src/main.rs` define a sub-module which wraps the functions exported by the library:
+In `./src/main.rs` define a sub-module using the
+[`hot_lib_reloader_macro::hot_module`] attribute macro which wraps the functions
+exported by the library:
 
 ```ignore
 // The value of `dylib = "..."` should be the library containing the hot-reloadable functions
@@ -345,8 +347,10 @@ If you can, don't use `hot-lib-reloader` in combination with `tracing`.
 */
 
 mod error;
+mod lib_reload_events;
 mod lib_reloader;
 
 pub use error::HotReloaderError;
 pub use hot_lib_reloader_macro::{define_lib_reloader, hot_module};
-pub use lib_reloader::{ChangedEvent, LibReloader};
+pub use lib_reload_events::{ChangedEvent, LibReloadNotifier, LibReloadObserver};
+pub use lib_reloader::LibReloader;

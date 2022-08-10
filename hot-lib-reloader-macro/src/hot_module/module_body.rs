@@ -54,7 +54,7 @@ impl syn::parse::Parse for HotModule {
 
                 // parses and code gens
                 // #[lib_change_subscription]
-                // pub fn subscribe() -> std::sync::mpsc::Receiver<hot_lib_reloader::ChangedEvent> {}
+                // pub fn subscribe() -> ... {}
                 syn::Item::Fn(func)
                     if func
                         .attrs
