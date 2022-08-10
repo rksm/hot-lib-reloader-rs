@@ -187,7 +187,7 @@ fn main() {
 }
 ```
 
-How to block reload to do serialization / deserialization is shown in the [lib-reload-subscription example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/lib-reload-subscription).
+How to block reload to do serialization / deserialization is shown in the [reload-events example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-events).
 
 
 
@@ -307,7 +307,7 @@ pub fn step(state: State) -> State {
 ```
 
 
-Alternatively you can also do the serialization just before the lib is to be reloaded and deserialize immediately thereafter. This is shown in the [lib-reload-subscription example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/lib-reload-subscription).
+Alternatively you can also do the serialization just before the lib is to be reloaded and deserialize immediately thereafter. This is shown in the [reload-events example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-events).
 
 
 
@@ -369,7 +369,7 @@ Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/
 - [minimal](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/minimal): Bare-bones setup.
 - [reload-feature](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature): Use a feature to switch between dynamic and static version.
 - [serialized-state](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/serialized-state): Shows an option to allow to modify types and state freely.
-- [lib-reload-subscription](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/lib-reload-subscription): Do stuff when the library has changed.
+- [reload-events](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-events): How to block reload to do serialization / deserialization.
 - [bevy](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy): Shows how to hot-reload bevy systems.
 
 
