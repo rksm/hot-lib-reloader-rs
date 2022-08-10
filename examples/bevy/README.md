@@ -20,7 +20,7 @@ Alternatively with a tool like [runcc](https://crates.io/crates/runcc) you can r
 
 ```shell
 $ cargo watch -w systems -w components -x "build -p systems --features dynamic"
-$ powershell -Command "& { $env:CARGO_TARGET_DIR='target-bin'; cargo run --features reload }"
+$ cargo run --features reload --target-dir "target-bin"
 ```
 
 Alternatively with [runcc](https://crates.io/crates/runcc): `cargo runcc -c runcc-windows.yml`
@@ -49,4 +49,4 @@ When Bevy is used with the `dynamic` feature (`bevy = { version = "0.8.0", featu
 There are two solutions:
 
 1. Do not use bevy's `dynamic` feature. This makes it work like on Linux and macOS. But the longer compile times ared reducing the usefulness of hot-reload.
-2. Keep using `dynamic` but with two different target directories for the lib and executable. This is what `env CARGO_TARGET_DIR=target-bin` (see [usage](#usage)) does and the recommended solution.
+2. Keep using `dynamic` but with two different target directories for the lib and executable. This is the the recommended solution (see [usage](#usage)).
