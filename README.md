@@ -80,7 +80,9 @@ hot-lib-reloader = "^0.5"
 lib = { path = "lib" }
 ```
 
-In `./src/main.rs` define a sub-module which wraps the functions exported by the library:
+In `./src/main.rs` define a sub-module using the
+[`hot_lib_reloader_macro::hot_module`] attribute macro which wraps the functions
+exported by the library:
 
 ```rust
 // The value of `dylib = "..."` should be the library containing the hot-reloadable functions

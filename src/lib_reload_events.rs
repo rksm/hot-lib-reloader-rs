@@ -1,6 +1,7 @@
 use std::{
     borrow::BorrowMut,
     sync::{mpsc, Arc, Condvar, Mutex},
+    time::Duration,
 };
 
 /// Signals when the library has changed.
@@ -106,6 +107,17 @@ impl LibReloadObserver {
         }
     }
 
+    /// Like [`Self::wait_for_about_to_reload`] but for a limited time. In case of a timeout return `None`.
+    pub fn wait_for_about_to_reload_timeout(&self, timeout: Duration) -> Option<BlockReload> {
+        loop {
+            match self.rx.recv_timeout(timeout) {
+                Ok(ChangedEvent::LibAboutToReload(block)) => return Some(block),
+                Err(_) => return None,
+                _ => continue,
+            }
+        }
+    }
+
     /// Will do blocking wait until a new library version is loaded.
     pub fn wait_for_reload(&self) {
         loop {
@@ -114,6 +126,17 @@ impl LibReloadObserver {
                 Err(err) => {
                     panic!("LibReloadObserver failed to wait for event from reloader: {err}")
                 }
+                _ => continue,
+            }
+        }
+    }
+
+    /// Like [`Self::wait_for_reload`] but for a limited time. In case of a timeout return `false`.
+    pub fn wait_for_reload_timeout(&self, timeout: Duration) -> bool {
+        loop {
+            match self.rx.recv_timeout(timeout) {
+                Ok(ChangedEvent::LibReloaded) => return true,
+                Err(_) => return false,
                 _ => continue,
             }
         }

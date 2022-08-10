@@ -25,7 +25,7 @@ use crate::error::HotReloaderError;
 /// Note that the [`LibReloader`] itself will not actively update, i.e. does not
 /// manage an update thread calling the update function. This is normally
 /// managed by the [`hot_lib_reloader_macro::hot_module`] macro that also
-/// manages the [about-to-load and load](LibReloadNotifier) notifications.
+/// manages the [about-to-load and load](crate::LibReloadNotifier) notifications.
 ///
 /// It can load symbols from the library with [LibReloader::get_symbol].
 pub struct LibReloader {

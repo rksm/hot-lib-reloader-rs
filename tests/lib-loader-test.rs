@@ -17,6 +17,7 @@ fn test() {
     let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
     assert_eq!(n, 5);
 
+    // simulate a file edit
     common::modify_file_and_do(
         "tests/lib_for_testing/src/lib.rs",
         |content| {
@@ -26,13 +27,13 @@ fn test() {
             )
         },
         || {
+            let lib_observer = hot_lib::subscribe();
+
             // simulate recompile
             std::thread::spawn(move || {
                 std::thread::sleep(std::time::Duration::from_millis(100));
                 common::recompile("tests/lib_for_testing");
             });
-
-            let lib_observer = hot_lib::subscribe();
 
             // wait for reload to begin (but make sure still have the old version loaded)
             let update_blocker = lib_observer.wait_for_about_to_reload();
