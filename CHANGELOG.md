@@ -2,6 +2,17 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.5.3]
+`#[lib_change_subscription]` now returns the `LibReloadObserver` type that wraps the mpsc channel.
+```rust
+#[lib_change_subscription]
+pub fn subscribe() -> hot_lib_reloader::LibReloadObserver {}
+```
+It provides multiple methods to wait for about-to-reload and reloaded events.
+
+Also add lots of documentation, a test, and a example around that.
+
+
 ## [0.5.2]
 Added support for getting lib reload events.
 Inside a `hot_module`, the following creates a function that can be used to subscribe:
