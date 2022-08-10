@@ -16,18 +16,16 @@ use std::time::Duration;
 
 use crate::error::HotReloaderError;
 
-/// Signals when the library has changed.
-#[derive(Debug)]
-#[non_exhaustive]
-pub enum ChangedEvent {
-    LibReloaded,
-}
-
-/// Manages a [libloading::Library] and watches a library (dylib) file.
+/// Manages watches a library (dylib) file, loads it using
+/// [`libloading::Library`] and [provides access to its
+/// symbols](LibReloader::get_symbol). When the library changes, [`LibReloader`]
+/// is able to unload the old version and reload the new version through
+/// [`LibReloader::update`].
 ///
-/// Will not automatically reload it but when the file changes the LibReloader
-/// can signal that with a [ChangedEvent]. Users are expected to call
-/// [LibReloader::update] themselves to actually reload the library.
+/// Note that the [`LibReloader`] itself will not actively update, i.e. does not
+/// manage an update thread calling the update function. This is normally
+/// managed by the [`hot_lib_reloader_macro::hot_module`] macro that also
+/// manages the [about-to-load and load](crate::LibReloadNotifier) notifications.
 ///
 /// It can load symbols from the library with [LibReloader::get_symbol].
 pub struct LibReloader {
@@ -39,7 +37,6 @@ pub struct LibReloader {
     watched_lib_file: PathBuf,
     loaded_lib_file: PathBuf,
     lib_file_hash: Arc<AtomicU32>,
-    lib_reloaded_subscribers: Arc<Mutex<Vec<mpsc::Sender<ChangedEvent>>>>,
     file_change_subscribers: Arc<Mutex<Vec<mpsc::Sender<()>>>>,
 }
 
@@ -98,23 +95,13 @@ impl LibReloader {
             lib,
             lib_file_hash,
             changed,
-            lib_reloaded_subscribers: Arc::new(Mutex::new(Vec::new())),
             file_change_subscribers,
         };
 
         Ok(lib_loader)
     }
 
-    /// Create a [ChangedEvent] receiver that gets signalled when the library
-    /// changes.
-    pub fn subscribe(&mut self) -> mpsc::Receiver<ChangedEvent> {
-        log::trace!("subscribe to lib change");
-        let (tx, rx) = mpsc::channel();
-        let mut subscribers = self.lib_reloaded_subscribers.lock().unwrap();
-        subscribers.push(tx);
-        rx
-    }
-
+    // needs to be public as it is used inside the hot_module macro.
     #[doc(hidden)]
     pub fn subscribe_to_file_changes(&mut self) -> mpsc::Receiver<()> {
         log::trace!("subscribe to file change");
@@ -133,16 +120,6 @@ impl LibReloader {
         self.changed.store(false, Ordering::SeqCst);
 
         self.reload()?;
-
-        if let Ok(subscribers) = self.lib_reloaded_subscribers.try_lock() {
-            log::trace!(
-                "sending ChangedEvent::LibReloaded to {} subscribers",
-                subscribers.len()
-            );
-            for tx in &*subscribers {
-                let _ = tx.send(ChangedEvent::LibReloaded);
-            }
-        }
 
         Ok(true)
     }

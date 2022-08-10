@@ -21,6 +21,7 @@ This is build around the [libloading crate](https://crates.io/crates/libloading)
         - [Executable](#executable)
         - [Library](#library)
         - [Running it](#running-it)
+    - [lib-reload events](#lib-reload-events)
 
 - [Usage tips](#usage-tips)
     - [Know the limitations](#know-the-limitations)
@@ -80,7 +81,9 @@ hot-lib-reloader = "^0.5"
 lib = { path = "lib" }
 ```
 
-In `./src/main.rs` define a sub-module which wraps the functions exported by the library:
+In `./src/main.rs` define a sub-module using the
+[`hot_lib_reloader_macro::hot_module`] attribute macro which wraps the functions
+exported by the library:
 
 ```rust
 // The value of `dylib = "..."` should be the library containing the hot-reloadable functions
@@ -100,7 +103,7 @@ fn main() {
     let mut state = hot_lib::State { counter: 0 };
     // Running in a loop so you can modify the code and see the effects
     loop {
-        hot_lib::do_stuff(&mut state);
+        hot_lib::step(&mut state);
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 }
@@ -128,7 +131,7 @@ pub struct State {
 }
 
 #[no_mangle]
-pub fn do_stuff(state: &mut State) {
+pub fn step(state: &mut State) {
     state.counter += 1;
     println!("doing stuff in iteration {}", state.counter);
 }
@@ -143,6 +146,48 @@ Now change for example the print statement in `lib/lib.rs` and see the effect on
 
 
 In addition, using a tool like [cargo runcc](https://crates.io/crates/runcc) is recommended. This allows to run both the lib build and the application in one go.
+
+
+
+### lib-reload events
+
+You can get notified about two kinds of events using the methods provided by [`LibReloadObserver`]:
+
+- [`wait_for_about_to_reload`](LibReloadObserver::wait_for_about_to_reload) the watched library is about to be reloaded (but the old version is still loaded)
+- [`wait_for_reload`](LibReloadObserver::wait_for_reload) a new version of the watched library was just reloaded
+
+This is useful to run code before and / or after library updates. One use case is to serialize and then deserialize state another one is driving the application.
+
+To continue with the example above, let's say instead of running the library function `step` every second we only want to re-run it when the library has changed.
+In order to do that, we first need to get hold of the `LibReloadObserver`. For that we can expose a function `subscribe()` that is annotated with the `#[lib_change_subscription]` (that attribute tells the `hot_module` macro to provide an implementation for it):
+
+```rust
+#[hot_lib_reloader::hot_module(dylib = "lib")]
+mod hot_lib {
+    /* code from above */
+
+    // expose a type to subscribe to lib load events
+    #[lib_change_subscription]
+    pub fn subscribe() -> hot_lib_reloader::LibReloadObserver {}
+}
+```
+
+And then the main function just waits for reloaded events:
+
+```rust
+fn main() {
+    let mut state = hot_lib::State { counter: 0 };
+    let lib_observer = hot_lib::subscribe();
+    loop {
+        hot_lib::step(&mut state);
+        // blocks until lib was reloaded
+        lib_observer.wait_for_reload();
+    }
+}
+```
+
+How to block reload to do serialization / deserialization is shown in the [lib-reload-subscription example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/lib-reload-subscription).
+
 
 
 ## Usage tips
@@ -261,6 +306,9 @@ pub fn step(state: State) -> State {
 ```
 
 
+Alternatively you can also do the serialization just before the lib is to be reloaded and deserialize immediately thereafter. This is shown in the [lib-reload-subscription example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/lib-reload-subscription).
+
+
 
 ### Use a hot-reload friendly app structure
 
@@ -274,7 +322,7 @@ You can also wait for lib changes and run code afterwards.
 This is useful if you want to iterate over a program that only produces output once, for example work on a data analysis or visualization.
 This snippet shows how:
 
-```example
+```rust
 #[hot_module(dylib = "lib")]
 mod hot_lib {
     /*...*/
@@ -283,7 +331,7 @@ mod hot_lib {
 }
 
 loop {
-    hot_lib::do_stuff();
+    hot_lib::step();
     // waits for a lib reload:
     let event = rx.recv()?;
 }
@@ -301,7 +349,7 @@ There is a different syntax available that allows you to define reloadable funct
 mod hot_lib {
     #[hot_functions]
     extern "Rust" {
-        pub fn do_stuff();
+        pub fn step();
     }
 }
 ```

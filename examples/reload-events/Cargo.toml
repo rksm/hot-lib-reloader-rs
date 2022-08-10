@@ -12,3 +12,4 @@ env_logger = "^0.9"
 hot-lib-reloader = { path = "../.." }
 lib = { path = "lib" }
 log = "^0.4"
+tokio = { version = "1.20.1", features = ["full"] }
