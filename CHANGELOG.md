@@ -2,7 +2,7 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
-## [0.5.4]
+## [0.5.5]
 ### Fix locking of lib loader
 We used a convoluted half-baked ref counting scheme for access to symbols while
 not needing to mutex lock the lib loader during a call (so that recursive calls
