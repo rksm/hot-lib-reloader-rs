@@ -57,12 +57,19 @@ pub(crate) fn generate_lib_loader_items(
                                 .send_about_to_reload_event_and_wait_for_blocks();
 
                             // get lock to lib_loader, make sure to not deadlock on it here
+                            let mut lock_attempts = 0;
                             loop {
                                 if let Ok(mut lib_loader) = lib_loader_for_update.try_write() {
+                                    if lock_attempts > 0 {
+                                        println!("[hot-lib-reloader] ...got write lock after {} attempts!", lock_attempts);
+                                    }
                                     let _ = !lib_loader.update().expect("hot lib update()");
                                     break;
                                 }
-                                println!("[hot-lib-reloader] trying to get a write lock");
+                                if lock_attempts == 0 {
+                                    println!("[hot-lib-reloader] trying to get a write lock...");
+                                }
+                                lock_attempts += 1;
                                 ::std::thread::sleep(::std::time::Duration::from_millis(1));
                             }
 

@@ -2,6 +2,9 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.5.6]
+Make the logging about attempted lib-loader write locks less verbose.
+
 ## [0.5.5]
 ### Fix locking of lib loader
 We used a convoluted half-baked ref counting scheme for access to symbols while
