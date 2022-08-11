@@ -31,10 +31,12 @@ This is build around the [libloading crate](https://crates.io/crates/libloading)
         - [Global state in reloadable code](#global-state-in-reloadable-code)
         - [Rust nightly](#rust-nightly)
     - [Use feature flags to switch between hot-reload and static code](#use-feature-flags-to-switch-between-hot-reload-and-static-code)
+    - [Disable `#[no-mangle]` in release mode](#disable-no-mangle-in-release-mode)
     - [Use serialization or generic values for changing types](#use-serialization-or-generic-values-for-changing-types)
     - [Use a hot-reload friendly app structure](#use-a-hot-reload-friendly-app-structure)
     - [Use multiple libraries](#use-multiple-libraries)
     - [Code-completion with rust-analyzer](#code-completion-with-rust-analyzer)
+    - [Debugging](#debugging)
 
 - [Examples](#examples)
 
@@ -254,6 +256,11 @@ mod hot_lib { /*...*/ }
 ```
 
 To run the static version just use `cargo run` the hot reloadable variant with `cargo run --features reload`.
+
+
+### Disable `#[no-mangle]` in release mode
+
+To not pay a penalty for exposing functions using `#[no_mangle]` in release mode where everything is statically compiled (see previous tip) and no functions need to be exported, you can use the [no-mangle-if-debug attribute macro](./macro-no-mangle-if-debug). It will conditionally disable name mangling, depending on wether you build release or debug mode.
 
 
 ### Use serialization or generic values for changing types
