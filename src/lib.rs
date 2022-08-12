@@ -367,6 +367,8 @@ mod hot_lib {
 
 If your `hot_module` gives you a strange compilation error, try `cargo expand` to see what code is generated.
 
+By default the `hot-lib-reloader` crate won't write to stdout or stderr but it logs what it does with info, debug, and trace log levels using the [log crate](https://crates.io/crates/log).
+Depending on what logging framework you use (e.g. [env_logger](https://crates.io/crates/env_logger)), you can enable those logs by setting a `RUST_LOG` filter like `RUST_LOG=hot_lib_reloader=trace`.
 
 
 # Examples

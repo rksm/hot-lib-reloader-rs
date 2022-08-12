@@ -57,19 +57,20 @@ pub(crate) fn generate_lib_loader_items(
                                 .send_about_to_reload_event_and_wait_for_blocks();
 
                             // get lock to lib_loader, make sure to not deadlock on it here
-                            let mut lock_attempts = 0;
+                            let mut first_lock_attempt = None;
                             loop {
                                 if let Ok(mut lib_loader) = lib_loader_for_update.try_write() {
-                                    if lock_attempts > 0 {
-                                        println!("[hot-lib-reloader] ...got write lock after {} attempts!", lock_attempts);
+                                    if let Some(first_lock_attempt) = first_lock_attempt {
+                                        let duration: ::std::time::Duration = first_lock_attempt - ::std::time::Instant::now();
+                                        ::hot_lib_reloader::LibReloader::log_info(&format!("...got write lock after {}ms!", duration.as_millis()));
                                     }
                                     let _ = !lib_loader.update().expect("hot lib update()");
                                     break;
                                 }
-                                if lock_attempts == 0 {
-                                    println!("[hot-lib-reloader] trying to get a write lock...");
+                                if first_lock_attempt.is_none() {
+                                    first_lock_attempt = Some(::std::time::Instant::now());
+                                    ::hot_lib_reloader::LibReloader::log_info("trying to get a write lock...");
                                 }
-                                lock_attempts += 1;
                                 ::std::thread::sleep(::std::time::Duration::from_millis(1));
                             }
 
@@ -124,7 +125,7 @@ pub(crate) fn gen_hot_module_function_for(
     for arg in &sig.inputs {
         match arg {
             FnArg::Receiver(_) => {
-                eprintln!("Warning: exported library name has receiver / self type");
+                eprintln!("[warn] exported library name has receiver / self type");
                 continue;
             }
             FnArg::Typed(typed) => {
