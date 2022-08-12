@@ -114,10 +114,10 @@ impl LibReloader {
     /// Checks if the watched library has changed. If it has, reload it and return
     /// true. Otherwise return false.
     pub fn update(&mut self) -> Result<bool, HotReloaderError> {
-        if !self.changed.load(Ordering::SeqCst) {
+        if !self.changed.load(Ordering::Acquire) {
             return Ok(false);
         }
-        self.changed.store(false, Ordering::SeqCst);
+        self.changed.store(false, Ordering::Release);
 
         self.reload()?;
 
@@ -153,7 +153,7 @@ impl LibReloader {
             log::trace!("copy {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(watched_lib_file, &loaded_lib_file)?;
             self.lib_file_hash
-                .store(hash_file(&loaded_lib_file), Ordering::Relaxed);
+                .store(hash_file(&loaded_lib_file), Ordering::Release);
             self.lib = Some(load_library(&loaded_lib_file)?);
             self.loaded_lib_file = loaded_lib_file;
         } else {
@@ -187,14 +187,14 @@ impl LibReloader {
 
             let debounce = Duration::from_millis(500);
             let signal_change = || {
-                if hash_file(&lib_file) == lib_file_hash.load(Ordering::Relaxed) {
+                if hash_file(&lib_file) == lib_file_hash.load(Ordering::Acquire) {
                     // file not changed
                     return false;
                 }
 
                 log::debug!("{lib_file:?} changed",);
 
-                changed.store(true, Ordering::Relaxed);
+                changed.store(true, Ordering::Release);
 
                 // inform subscribers
                 let subscribers = file_change_subscribers.lock().unwrap();
