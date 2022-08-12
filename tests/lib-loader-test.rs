@@ -6,6 +6,9 @@ mod hot_lib {
 
     #[lib_change_subscription]
     pub fn subscribe() -> hot_lib_reloader::LibReloadObserver {}
+
+    #[lib_version]
+    pub fn version() -> usize {}
 }
 
 #[test]
@@ -16,6 +19,8 @@ fn test() {
 
     let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
     assert_eq!(n, 5);
+
+    assert_eq!(hot_lib::version(), 0);
 
     // simulate a file edit
     common::modify_file_and_do(
@@ -39,6 +44,7 @@ fn test() {
             let update_blocker = lib_observer.wait_for_about_to_reload();
             let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
             assert_eq!(n, 5);
+            assert_eq!(hot_lib::version(), 0);
 
             // drop the blocker to allow update
             drop(update_blocker);
@@ -49,6 +55,7 @@ fn test() {
             // make rue lib is new
             let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
             assert_eq!(n, 7);
+            assert_eq!(hot_lib::version(), 1);
         },
     );
 }

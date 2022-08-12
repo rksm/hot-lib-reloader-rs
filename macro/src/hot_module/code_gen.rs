@@ -37,6 +37,9 @@ pub(crate) fn generate_lib_loader_items(
         static mut LIB_LOADER: Option<::std::sync::Arc<::std::sync::RwLock<::hot_lib_reloader::LibReloader>>> = None;
         static LIB_LOADER_INIT: ::std::sync::Once = ::std::sync::Once::new();
 
+        // version counter that counts the reloads
+        static VERSION: ::std::sync::atomic::AtomicUsize = ::std::sync::atomic::AtomicUsize::new(0);
+
         fn __lib_loader() -> ::std::sync::Arc<::std::sync::RwLock<::hot_lib_reloader::LibReloader>> {
             LIB_LOADER_INIT.call_once(|| {
                 let mut lib_loader = ::hot_lib_reloader::LibReloader::new(#lib_dir, #lib_name)
@@ -73,6 +76,8 @@ pub(crate) fn generate_lib_loader_items(
                                 }
                                 ::std::thread::sleep(::std::time::Duration::from_millis(1));
                             }
+
+                            VERSION.fetch_add(1, ::std::sync::atomic::Ordering::Release);
 
                             // inform subscribers about lib reloaded
                             __lib_notifier()
@@ -191,6 +196,23 @@ pub(crate) fn gen_lib_change_subscription_function(
         block: syn::parse_quote_spanned! {span=>
             {
                 __lib_loader_subscription()
+            }
+        },
+    })
+}
+
+pub(crate) fn gen_lib_version_function(f_decl: ForeignItemFn, span: Span) -> Result<ItemFn> {
+    let ForeignItemFn {
+        sig, vis, attrs, ..
+    } = f_decl;
+
+    Ok(ItemFn {
+        attrs,
+        vis,
+        sig,
+        block: syn::parse_quote_spanned! {span=>
+            {
+                VERSION.load(::std::sync::atomic::Ordering::Acquire)
             }
         },
     })
