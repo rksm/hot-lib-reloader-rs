@@ -51,6 +51,7 @@ impl LibReloader {
     pub fn new(
         lib_dir: impl AsRef<Path>,
         lib_name: impl AsRef<str>,
+        file_watch_debounce: Option<Duration>,
     ) -> Result<Self, HotReloaderError> {
         // find the target dir in which the build is happening and where we should find
         // the library
@@ -84,6 +85,7 @@ impl LibReloader {
             lib_file_hash.clone(),
             changed.clone(),
             file_change_subscribers.clone(),
+            file_watch_debounce.unwrap_or_else(|| Duration::from_millis(500)),
         )?;
 
         let lib_loader = Self {
@@ -169,6 +171,7 @@ impl LibReloader {
         lib_file_hash: Arc<AtomicU32>,
         changed: Arc<AtomicBool>,
         file_change_subscribers: Arc<Mutex<Vec<mpsc::Sender<()>>>>,
+        debounce: Duration,
     ) -> Result<(), HotReloaderError> {
         let lib_file = lib_file.as_ref().to_path_buf();
         log::info!("start watching changes of file {}", lib_file.display());
@@ -180,12 +183,11 @@ impl LibReloader {
             use DebouncedEvent::*;
 
             let (tx, rx) = mpsc::channel();
-            let mut watcher = watcher(tx, Duration::from_millis(50)).unwrap();
+            let mut watcher = watcher(tx, debounce).unwrap();
             watcher
                 .watch(&lib_file, RecursiveMode::NonRecursive)
                 .expect("watch lib file");
 
-            let debounce = Duration::from_millis(500);
             let signal_change = || {
                 if hash_file(&lib_file) == lib_file_hash.load(Ordering::Acquire) {
                     // file not changed
@@ -231,7 +233,7 @@ impl LibReloader {
                                 signal_change();
                                 break;
                             }
-                            thread::sleep(debounce);
+                            thread::sleep(Duration::from_millis(500));
                         }
                     }
                     Ok(change) => {

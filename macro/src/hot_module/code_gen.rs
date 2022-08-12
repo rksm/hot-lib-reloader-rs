@@ -1,12 +1,13 @@
 use proc_macro2::Span;
-use syn::ForeignItemFn;
 use syn::{token, FnArg, ItemFn, LitByteStr, LitStr, Result, VisPublic, Visibility};
+use syn::{ForeignItemFn, LitInt};
 
 use crate::util::ident_from_pat;
 
 pub(crate) fn generate_lib_loader_items(
     lib_dir: &LitStr,
     lib_name: &LitStr,
+    file_watch_debounce_ms: &LitInt,
     span: Span,
 ) -> Result<proc_macro2::TokenStream> {
     let result = quote::quote_spanned! {span=>
@@ -42,7 +43,7 @@ pub(crate) fn generate_lib_loader_items(
 
         fn __lib_loader() -> ::std::sync::Arc<::std::sync::RwLock<::hot_lib_reloader::LibReloader>> {
             LIB_LOADER_INIT.call_once(|| {
-                let mut lib_loader = ::hot_lib_reloader::LibReloader::new(#lib_dir, #lib_name)
+                let mut lib_loader = ::hot_lib_reloader::LibReloader::new(#lib_dir, #lib_name, Some(::std::time::Duration::from_millis(#file_watch_debounce_ms)))
                     .expect("failed to create hot reload loader");
 
                 let change_rx = lib_loader.subscribe_to_file_changes();
