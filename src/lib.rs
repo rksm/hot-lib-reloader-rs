@@ -35,6 +35,7 @@ This is build around the [libloading crate](https://crates.io/crates/libloading)
     - [Use serialization or generic values for changing types](#use-serialization-or-generic-values-for-changing-types)
     - [Use a hot-reload friendly app structure](#use-a-hot-reload-friendly-app-structure)
     - [Use multiple libraries](#use-multiple-libraries)
+    - [Adjust the file watch debounce duration](#adjust-the-file-watch-debounce-duration)
     - [Debugging](#debugging)
 
 - [Examples](#examples)
@@ -340,6 +341,18 @@ loop {
 }
 ```
 
+## Adjust the file watch debounce duration
+
+The `hot_module` macro allows setting the `file_watch_debounce` attribute which defines the debounce duration for file changes in milliseconds.
+This is 500ms by default.
+If you see multiple updates triggered for one recompile (can happen the library is very large), increase that value.
+You can try to decrease it for faster reloads. With small libraries / fast hardware 50ms or 20ms should work fine.
+
+```ignore
+#[hot_module(dylib = "lib", file_watch_debounce = 50)]
+/* ... */
+```
+
 
 ## Debugging
 
@@ -357,6 +370,7 @@ Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/
 - [reload-feature](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature): Use a feature to switch between dynamic and static version.
 - [serialized-state](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/serialized-state): Shows an option to allow to modify types and state freely.
 - [reload-events](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-events): How to block reload to do serialization / deserialization.
+- [all-options](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/all-options): All options the `hot_module` macro accepts.
 - [bevy](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy): Shows how to hot-reload bevy systems.
 
 

@@ -1,6 +1,6 @@
 mod common;
 
-#[hot_lib_reloader::hot_module(dylib = "lib_for_testing")]
+#[hot_lib_reloader::hot_module(dylib = "lib_for_testing", file_watch_debounce = 50)]
 mod hot_lib {
     hot_functions_from_file!("tests/lib_for_testing/src/lib.rs");
 
