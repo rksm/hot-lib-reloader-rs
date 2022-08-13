@@ -2,6 +2,30 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.6.0]
+### Breaking change
+`hot_functions_from_file!("path/to/file.rs")` and `define_lib_reloader!(...)` expect file path to be __relative to the project root__, not relative to the file they appear in.
+
+See https://github.com/rksm/hot-lib-reloader-rs/issues/13 for the background.
+
+### Other changes
+- the hot-lib-reloader won't log to stdout/stderr anymore in the running app. It now fully uses the `log` crate. Use `RUST_LOG=hot_lib_reloader=trace` for debugging.
+- fix macro expansion and code completion with rust-analyzer
+- no more requirement to use Rust nightly!
+- version counter can be optionally exposed from `hot_module`:
+```rust
+#[hot_module(dylib = "lib")]
+mod hot_lib {
+    /* ... */
+
+    #[lib_version]
+    pub fn version() -> usize {}
+}
+```
+
+`hot_lib::version()` will then return a monotonically increasing number, starting with 0.
+Each library reload will increase the counter.
+
 ## [0.5.6]
 Make the logging about attempted lib-loader write locks less verbose.
 
