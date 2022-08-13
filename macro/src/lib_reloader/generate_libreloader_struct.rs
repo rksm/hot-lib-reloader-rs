@@ -25,7 +25,7 @@ pub fn generate_lib_reloader_struct(
         impl #name {
             pub fn new() -> Result<Self, ::hot_lib_reloader::HotReloaderError> {
                 Ok(Self {
-                    lib_loader: ::hot_lib_reloader::LibReloader::new(#lib_dir, #lib_name)?,
+                    lib_loader: ::hot_lib_reloader::LibReloader::new(#lib_dir, #lib_name, None)?,
                 })
             }
 

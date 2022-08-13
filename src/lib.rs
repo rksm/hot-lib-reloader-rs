@@ -30,13 +30,11 @@ This is build around the [libloading crate](https://crates.io/crates/libloading)
         - [Type changes require some care](#type-changes-require-some-care)
         - [Hot-reloadable functions cannot be generic](#hot-reloadable-functions-cannot-be-generic)
         - [Global state in reloadable code](#global-state-in-reloadable-code)
-        - [Rust nightly](#rust-nightly)
     - [Use feature flags to switch between hot-reload and static code](#use-feature-flags-to-switch-between-hot-reload-and-static-code)
     - [Disable `#[no-mangle]` in release mode](#disable-no-mangle-in-release-mode)
     - [Use serialization or generic values for changing types](#use-serialization-or-generic-values-for-changing-types)
     - [Use a hot-reload friendly app structure](#use-a-hot-reload-friendly-app-structure)
     - [Use multiple libraries](#use-multiple-libraries)
-    - [Code-completion with rust-analyzer](#code-completion-with-rust-analyzer)
     - [Debugging](#debugging)
 
 - [Examples](#examples)
@@ -95,7 +93,8 @@ exported by the library:
 mod hot_lib {
     // Reads public no_mangle functions from lib.rs and  generates hot-reloadable
     // wrapper functions with the same signature inside this module.
-    hot_functions_from_file!("../lib/src/lib.rs");
+    // Note that this path relative to the project root (or absolute)
+    hot_functions_from_file!("lib/src/lib.rs");
 
     // Because we generate functions with the exact same signatures,
     // we need to import types used
@@ -221,10 +220,6 @@ Since `#[no_mangle]` does not support generics, generic functions can't be named
 
 If your hot-reload library contains global state (or depends on a library that does), you will need to re-initialize it after reload. This can be a problem with libraries that hide the global state from the user. If you need to use global state, keep it inside the executable and pass it into the reloadable functions if possible.
 
-### Rust nightly
-
-You currently need to use Rust nightly to run hot-reloadable code. The reason for that is that we currently need [the `proc_macro::Span` feature](https://github.com/rust-lang/rust/issues/54725). We are looking into a solution that works on stable.
-
 
 
 ## Use feature flags to switch between hot-reload and static code
@@ -274,7 +269,7 @@ Here is an example where we crate a state container that has an inner `serde_jso
 #[hot_lib_reloader::hot_module(dylib = "lib")]
 mod hot_lib {
     pub use lib::State;
-    hot_functions_from_file!("../lib/src/lib.rs");
+    hot_functions_from_file!("lib/src/lib.rs");
 }
 
 fn main() {
@@ -342,23 +337,6 @@ loop {
     hot_lib::step();
     // waits for a lib reload:
     let event = rx.recv()?;
-}
-```
-
-
-## Code-completion with rust-analyzer
-
-Functions that get injected with automatic code generation that happens with `hot_functions_from_file!("path/to/file.rs");` won't be picked up by rust-analyzer and thus you don't have auto-completion for them.
-
-There is a different syntax available that allows you to define reloadable functions inline so that they get picked up by rust-analyzer:
-
-```ignore
-#[hot_lib_reloader::hot_module(dylib = "lib")]
-mod hot_lib {
-    #[hot_functions]
-    extern "Rust" {
-        pub fn step();
-    }
 }
 ```
 
