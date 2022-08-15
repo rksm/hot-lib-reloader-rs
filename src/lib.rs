@@ -30,13 +30,12 @@ This is build around the [libloading crate](https://crates.io/crates/libloading)
         - [Type changes require some care](#type-changes-require-some-care)
         - [Hot-reloadable functions cannot be generic](#hot-reloadable-functions-cannot-be-generic)
         - [Global state in reloadable code](#global-state-in-reloadable-code)
-        - [Rust nightly](#rust-nightly)
     - [Use feature flags to switch between hot-reload and static code](#use-feature-flags-to-switch-between-hot-reload-and-static-code)
     - [Disable `#[no-mangle]` in release mode](#disable-no-mangle-in-release-mode)
     - [Use serialization or generic values for changing types](#use-serialization-or-generic-values-for-changing-types)
     - [Use a hot-reload friendly app structure](#use-a-hot-reload-friendly-app-structure)
     - [Use multiple libraries](#use-multiple-libraries)
-    - [Code-completion with rust-analyzer](#code-completion-with-rust-analyzer)
+    - [Adjust the file watch debounce duration](#adjust-the-file-watch-debounce-duration)
     - [Debugging](#debugging)
 
 - [Examples](#examples)
@@ -95,7 +94,8 @@ exported by the library:
 mod hot_lib {
     // Reads public no_mangle functions from lib.rs and  generates hot-reloadable
     // wrapper functions with the same signature inside this module.
-    hot_functions_from_file!("../lib/src/lib.rs");
+    // Note that this path relative to the project root (or absolute)
+    hot_functions_from_file!("lib/src/lib.rs");
 
     // Because we generate functions with the exact same signatures,
     // we need to import types used
@@ -221,10 +221,6 @@ Since `#[no_mangle]` does not support generics, generic functions can't be named
 
 If your hot-reload library contains global state (or depends on a library that does), you will need to re-initialize it after reload. This can be a problem with libraries that hide the global state from the user. If you need to use global state, keep it inside the executable and pass it into the reloadable functions if possible.
 
-### Rust nightly
-
-You currently need to use Rust nightly to run hot-reloadable code. The reason for that is that we currently need [the `proc_macro::Span` feature](https://github.com/rust-lang/rust/issues/54725). We are looking into a solution that works on stable.
-
 
 
 ## Use feature flags to switch between hot-reload and static code
@@ -274,7 +270,7 @@ Here is an example where we crate a state container that has an inner `serde_jso
 #[hot_lib_reloader::hot_module(dylib = "lib")]
 mod hot_lib {
     pub use lib::State;
-    hot_functions_from_file!("../lib/src/lib.rs");
+    hot_functions_from_file!("lib/src/lib.rs");
 }
 
 fn main() {
@@ -345,21 +341,16 @@ loop {
 }
 ```
 
+## Adjust the file watch debounce duration
 
-## Code-completion with rust-analyzer
-
-Functions that get injected with automatic code generation that happens with `hot_functions_from_file!("path/to/file.rs");` won't be picked up by rust-analyzer and thus you don't have auto-completion for them.
-
-There is a different syntax available that allows you to define reloadable functions inline so that they get picked up by rust-analyzer:
+The `hot_module` macro allows setting the `file_watch_debounce` attribute which defines the debounce duration for file changes in milliseconds.
+This is 500ms by default.
+If you see multiple updates triggered for one recompile (can happen the library is very large), increase that value.
+You can try to decrease it for faster reloads. With small libraries / fast hardware 50ms or 20ms should work fine.
 
 ```ignore
-#[hot_lib_reloader::hot_module(dylib = "lib")]
-mod hot_lib {
-    #[hot_functions]
-    extern "Rust" {
-        pub fn step();
-    }
-}
+#[hot_module(dylib = "lib", file_watch_debounce = 50)]
+/* ... */
 ```
 
 
@@ -379,6 +370,7 @@ Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/
 - [reload-feature](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature): Use a feature to switch between dynamic and static version.
 - [serialized-state](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/serialized-state): Shows an option to allow to modify types and state freely.
 - [reload-events](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-events): How to block reload to do serialization / deserialization.
+- [all-options](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/all-options): All options the `hot_module` macro accepts.
 - [bevy](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy): Shows how to hot-reload bevy systems.
 
 

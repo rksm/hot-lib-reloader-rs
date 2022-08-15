@@ -9,7 +9,7 @@ use tokio::{spawn, sync::mpsc, task::spawn_blocking, time};
 #[hot_lib_reloader::hot_module(dylib = "lib")]
 mod hot_lib {
     pub use lib::State;
-    hot_functions_from_file!("../lib/src/lib.rs");
+    hot_functions_from_file!("lib/src/lib.rs");
 
     // expose a type to subscribe to lib load events
     #[lib_change_subscription]

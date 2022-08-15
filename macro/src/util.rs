@@ -24,19 +24,9 @@ pub fn ident_from_pat(
 pub fn read_unmangled_functions_from_file(file_name: LitStr) -> Result<Vec<(ForeignItemFn, Span)>> {
     let span = file_name.span();
     let path: PathBuf = file_name.value().into();
-    let path = if path.is_relative() {
-        let file_with_macro = proc_macro::Span::call_site().source_file();
-        file_with_macro
-            .path()
-            .parent()
-            .map(|dir| dir.join(&path))
-            .unwrap_or(path)
-    } else {
-        path
-    };
 
     if !path.exists() {
-        return Err(Error::new(span, format!("file does not exist: {path:?}")));
+        return Err(Error::new(span, format!("Could not find Rust source file {path:?}. Please make sure that you specify the file path from the project root directory. Please not that this has been changed in hot-lib-reloader v0.5 -> v0.6. See https://github.com/rksm/hot-lib-reloader-rs/issues/13.")));
     }
 
     let content = std::fs::read_to_string(&path)

@@ -1,7 +1,7 @@
 #[hot_lib_reloader::hot_module(dylib = "lib")]
 mod hot_lib {
     pub use lib::State;
-    hot_functions_from_file!("../lib/src/lib.rs");
+    hot_functions_from_file!("lib/src/lib.rs");
 }
 
 fn main() {

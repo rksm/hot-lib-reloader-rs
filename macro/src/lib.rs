@@ -1,5 +1,3 @@
-#![feature(proc_macro_span)]
-
 mod hot_module;
 mod lib_reloader;
 mod util;

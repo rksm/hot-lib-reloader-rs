@@ -2,6 +2,36 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.6.0]
+### Breaking change
+`hot_functions_from_file!("path/to/file.rs")` and `define_lib_reloader!(...)` expect file path to be __relative to the project root__, not relative to the file they appear in.
+
+See https://github.com/rksm/hot-lib-reloader-rs/issues/13 for the background.
+
+### Other changes
+- The hot-lib-reloader won't log to stdout/stderr anymore in the running app. It now fully uses the `log` crate. Use `RUST_LOG=hot_lib_reloader=trace` for debugging.
+- Fix macro expansion and code completion with rust-analyzer
+- No more requirement to use Rust nightly!
+- Version counter can be optionally exposed from `hot_module`:
+```rust
+#[hot_module(dylib = "lib")]
+mod hot_lib {
+    /* ... */
+
+    #[lib_version]
+    pub fn version() -> usize {}
+}
+```
+
+- Allow to specify the debounce duration for file changes in milliseconds. This is 500ms by default. If you see multiple updates triggerd for one recompile (can happen the library is very large), increase that value. You can try to decrease it for faster reloads. With small libraries / fast hardware 50ms or 20ms should work fine.
+```rust
+#[hot_module(dylib = "lib", file_watch_debounce = 50)]
+/* ... */
+```
+
+`hot_lib::version()` will then return a monotonically increasing number, starting with 0.
+Each library reload will increase the counter.
+
 ## [0.5.6]
 Make the logging about attempted lib-loader write locks less verbose.
 
