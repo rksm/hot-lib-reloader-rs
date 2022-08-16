@@ -21,6 +21,11 @@ mod hot_lib {
     // a monotonically increasing counter (starting with 0) that counts library reloads
     #[lib_version]
     pub fn version() -> usize {}
+
+    // Expose a query function to test if the lib was reloaded. Note that this
+    // function will return true only _once_ after a reload.
+    #[lib_updated]
+    pub fn was_updated() -> bool {}
 }
 
 fn main() {
@@ -36,5 +41,8 @@ fn main() {
 
         hot_lib::subscribe().wait_for_reload();
         println!("reloaded at version {} now", hot_lib::version());
+
+        assert!(hot_lib::was_updated());
+        assert!(!hot_lib::was_updated());
     }
 }

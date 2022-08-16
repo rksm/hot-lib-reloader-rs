@@ -7,7 +7,7 @@ use super::code_gen::{
     gen_hot_module_function_for, gen_lib_change_subscription_function, generate_lib_loader_items,
 };
 use super::HotModuleAttribute;
-use crate::hot_module::code_gen::gen_lib_version_function;
+use crate::hot_module::code_gen::{gen_lib_version_function, gen_lib_was_updated_function};
 use crate::util::read_unmangled_functions_from_file;
 
 pub(crate) struct HotModule {
@@ -90,6 +90,26 @@ impl syn::parse::Parse for HotModule {
                         semi_token: token::Semi::default(),
                     };
                     let f = gen_lib_version_function(f, span)?;
+                    items.push(Item::Fn(f));
+                }
+
+                // parses and code gens
+                // #[lib_updated]
+                // pub fn was_updated() -> bool {}
+                syn::Item::Fn(func)
+                    if func
+                        .attrs
+                        .iter()
+                        .any(|attr| attr.path.is_ident("lib_updated")) =>
+                {
+                    let span = func.span();
+                    let f = ForeignItemFn {
+                        attrs: Vec::new(),
+                        vis: func.vis,
+                        sig: func.sig,
+                        semi_token: token::Semi::default(),
+                    };
+                    let f = gen_lib_was_updated_function(f, span)?;
                     items.push(Item::Fn(f));
                 }
 

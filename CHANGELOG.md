@@ -2,6 +2,23 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.6.1]
+### expose simple update check
+It is now possible to use a simple update check to test if the library was reloaded:
+
+```rust
+#[hot_lib_reloader::hot_module(dylib = "lib")]
+mod hot_lib {
+    /* ... */
+    #[lib_updated]
+    pub fn was_updated() -> bool {}
+}
+```
+
+This can simplify code that wants to just figure out if a change happened and would have had to use the version counter for that.
+Note that this function only returns `true` _once` after a reload. The next time you call that function, if no reload has occurred again, it will return `false`.
+
+
 ## [0.6.0]
 ### Breaking change
 `hot_functions_from_file!("path/to/file.rs")` and `define_lib_reloader!(...)` expect file path to be __relative to the project root__, not relative to the file they appear in.

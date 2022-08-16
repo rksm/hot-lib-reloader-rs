@@ -154,6 +154,8 @@ In addition, using a tool like [cargo runcc](https://crates.io/crates/runcc) is 
 
 ## lib-reload events
 
+### LibReloadObserver
+
 You can get notified about two kinds of events using the methods provided by [`LibReloadObserver`]:
 
 - [`wait_for_about_to_reload`](LibReloadObserver::wait_for_about_to_reload) the watched library is about to be reloaded (but the old version is still loaded)
@@ -190,6 +192,23 @@ fn main() {
 ```
 
 How to block reload to do serialization / deserialization is shown in the [reload-events example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-events).
+
+
+### `was_updated` flag
+
+To just figure out if the library has changed, a simple test function can be exposed:
+
+```ignore
+#[hot_lib_reloader::hot_module(dylib = "lib")]
+mod hot_lib {
+    /* ... */
+    #[lib_updated]
+    pub fn was_updated() -> bool {}
+}
+```
+
+`hot_lib::was_updated()` will return `true` the first time it is called after the library was reloaded.
+It will then return false until another reload occurred.
 
 
 

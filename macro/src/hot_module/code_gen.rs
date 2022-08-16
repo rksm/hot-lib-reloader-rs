@@ -40,6 +40,8 @@ pub(crate) fn generate_lib_loader_items(
 
         // version counter that counts the reloads
         static VERSION: ::std::sync::atomic::AtomicUsize = ::std::sync::atomic::AtomicUsize::new(0);
+        // for simple queries
+        static WAS_UPDATED: ::std::sync::atomic::AtomicBool = ::std::sync::atomic::AtomicBool::new(false);
 
         fn __lib_loader() -> ::std::sync::Arc<::std::sync::RwLock<::hot_lib_reloader::LibReloader>> {
             LIB_LOADER_INIT.call_once(|| {
@@ -79,6 +81,7 @@ pub(crate) fn generate_lib_loader_items(
                             }
 
                             VERSION.fetch_add(1, ::std::sync::atomic::Ordering::Release);
+                            WAS_UPDATED.store(true, ::std::sync::atomic::Ordering::Release);
 
                             // inform subscribers about lib reloaded
                             __lib_notifier()
@@ -214,6 +217,23 @@ pub(crate) fn gen_lib_version_function(f_decl: ForeignItemFn, span: Span) -> Res
         block: syn::parse_quote_spanned! {span=>
             {
                 VERSION.load(::std::sync::atomic::Ordering::Acquire)
+            }
+        },
+    })
+}
+
+pub(crate) fn gen_lib_was_updated_function(f_decl: ForeignItemFn, span: Span) -> Result<ItemFn> {
+    let ForeignItemFn {
+        sig, vis, attrs, ..
+    } = f_decl;
+
+    Ok(ItemFn {
+        attrs,
+        vis,
+        sig,
+        block: syn::parse_quote_spanned! {span=>
+            {
+                WAS_UPDATED.swap(false,::std::sync::atomic::Ordering::AcqRel)
             }
         },
     })

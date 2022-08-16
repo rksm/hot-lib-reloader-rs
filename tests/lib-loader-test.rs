@@ -9,6 +9,9 @@ mod hot_lib {
 
     #[lib_version]
     pub fn version() -> usize {}
+
+    #[lib_updated]
+    pub fn was_updated() -> bool {}
 }
 
 #[test]
@@ -21,6 +24,7 @@ fn test() {
     assert_eq!(n, 5);
 
     assert_eq!(hot_lib::version(), 0);
+    assert!(!hot_lib::was_updated());
 
     // simulate a file edit
     common::modify_file_and_do(
@@ -45,6 +49,7 @@ fn test() {
             let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
             assert_eq!(n, 5);
             assert_eq!(hot_lib::version(), 0);
+            assert!(!hot_lib::was_updated());
 
             // drop the blocker to allow update
             drop(update_blocker);
@@ -56,6 +61,8 @@ fn test() {
             let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
             assert_eq!(n, 7);
             assert_eq!(hot_lib::version(), 1);
+            assert!(hot_lib::was_updated());
+            assert!(!hot_lib::was_updated());
         },
     );
 }
