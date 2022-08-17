@@ -1,0 +1,5 @@
+commands:
+  bin: |
+    cargo watch -i lib -x "run --features reload"
+  lib: |
+    cargo watch -w lib -x "build -p lib"
