@@ -2,15 +2,20 @@
 mod hot_lib {
     pub use lib::State;
     hot_functions_from_file!("lib/src/lib.rs");
+
+    #[lib_version]
+    pub fn version() -> usize {}
+
+    #[lib_change_subscription]
+    pub fn subscribe() -> hot_lib_reloader::LibReloadObserver {}
 }
 
 fn main() {
-    let mut state = hot_lib::State {
-        inner: serde_json::json!(null),
-    };
+    let mut state = hot_lib::State::default();
 
     loop {
         state = hot_lib::step(state);
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        hot_lib::subscribe().wait_for_reload();
+        state.version = hot_lib::version();
     }
 }

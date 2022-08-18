@@ -78,7 +78,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-hot-lib-reloader = "^0.5"
+hot-lib-reloader = "^0.6"
 lib = { path = "lib" }
 ```
 
@@ -254,7 +254,7 @@ default = []
 reload = ["dep:hot-lib-reloader"]
 
 [dependencies]
-hot-lib-reloader = { version = "^0.5", optional = true }
+hot-lib-reloader = { version = "^0.6", optional = true }
 ```
 
 and then conditionally use either the normal or the hot module in the code calling the reloadable functions you can seamlessly switch between a static and hot-reloadable version of your application:

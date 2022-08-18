@@ -1,18 +1,24 @@
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct State {
-    pub inner: serde_json::Value,
+    pub version: usize,
+    pub inner: Box<serde_json::Value>,
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(Default, Debug, serde::Deserialize, serde::Serialize)]
 struct InnerState {}
 
 #[no_mangle]
 pub fn step(state: State) -> State {
-    let inner: InnerState = serde_json::from_value(state.inner).unwrap_or(InnerState {});
+    let State { version, inner } = state;
+
+    let inner: InnerState = serde_json::from_value(*inner).unwrap_or_default();
+
+    println!("version {version}: {inner:?}");
 
     // You can modify the InnerState layout freely and state.inner value here freely!
 
     State {
-        inner: serde_json::to_value(inner).unwrap(),
+        version,
+        inner: Box::new(serde_json::to_value(inner).unwrap()),
     }
 }
