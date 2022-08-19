@@ -15,7 +15,6 @@ use std::thread;
 use std::time::Duration;
 
 use crate::error::HotReloaderError;
-use crate::util::TimedLimiter;
 
 #[cfg(feature = "verbose")]
 use log;
@@ -77,12 +76,10 @@ impl LibReloader {
             // where a file lock would be held, preventing the lib from changing later.
             log::debug!("copying {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(&watched_lib_file, &loaded_lib_file)?;
+            let hash = hash_file(&loaded_lib_file);
             #[cfg(target_os = "macos")]
             codesigner.codesign(&loaded_lib_file);
-            (
-                hash_file(&loaded_lib_file),
-                Some(load_library(&loaded_lib_file)?),
-            )
+            (hash, Some(load_library(&loaded_lib_file)?))
         } else {
             log::debug!("library {watched_lib_file:?} does not yet exist");
             (0, None)
@@ -167,10 +164,10 @@ impl LibReloader {
                 watched_and_loaded_library_paths(lib_dir, lib_name, *load_counter);
             log::trace!("copy {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(watched_lib_file, &loaded_lib_file)?;
-            #[cfg(target_os = "macos")]
-            self.codesigner.codesign(&loaded_lib_file);
             self.lib_file_hash
                 .store(hash_file(&loaded_lib_file), Ordering::Release);
+            #[cfg(target_os = "macos")]
+            self.codesigner.codesign(&loaded_lib_file);
             self.lib = Some(load_library(&loaded_lib_file)?);
             self.loaded_lib_file = loaded_lib_file;
         } else {
@@ -203,17 +200,8 @@ impl LibReloader {
                 .watch(&lib_file, RecursiveMode::NonRecursive)
                 .expect("watch lib file");
 
-            // Some changes such as codesigning can emit subsequent file change
-            // events that can be received delayed. Those wont get caught by the
-            // `debounce` delay of the watcher as we ourselve are responsible
-            // for those changes happening. As we don't want to run into a reload
-            // loop we limit the amount of signaled changes that can happen in a
-            // short timespan additionally with the `TimedLimiter`.
-            let mut signal_limit = TimedLimiter::<3>::new(Duration::from_secs(1));
-
-            let mut signal_change = || {
-                if signal_limit.too_frequent()
-                    || hash_file(&lib_file) == lib_file_hash.load(Ordering::Acquire)
+            let signal_change = || {
+                if hash_file(&lib_file) == lib_file_hash.load(Ordering::Acquire)
                     || changed.load(Ordering::Acquire)
                 {
                     // file not changed

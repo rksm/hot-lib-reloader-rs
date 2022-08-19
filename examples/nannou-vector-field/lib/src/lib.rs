@@ -31,33 +31,35 @@ impl Model {
 
 #[derive(Debug, Default)]
 struct Thing {
-    positions: VecDeque<Vec2>,
+    pos: Vec2,
     color: Rgb,
     width: f32,
+    age: u64,
 }
 
 impl Thing {
     pub fn random(bounds: Rect) -> Self {
         Self {
-            positions: [pt2(
+            pos: pt2(
                 random_range(bounds.left(), bounds.right()),
                 random_range(bounds.bottom(), bounds.top()),
-            )]
+            )
             .into(),
             color: rgb(random_f32(), random_f32(), random_f32()),
             width: random_range(1.0, 10.0),
+            age: 1,
         }
     }
 
     fn pos(&self) -> Vec2 {
-        self.positions.back().cloned().unwrap()
+        self.pos
     }
 }
 
 #[derive(Default, Debug)]
 pub struct State {
     version: usize,
-    vector_field: VectorField<30, 30>,
+    vector_field: VectorField<20, 20>,
     things: Vec<Thing>,
     needs_draw: bool,
     updates: usize,
@@ -107,15 +109,12 @@ pub fn update(app: &App, model: &mut Model, update: Update) {
         vector_field.update(|pos2, vec| (pos - pos2));
     }
 
+    vector_field.update(|pos2, vec| vec.rotate(deg_to_rad(1.0)));
+
     for thing in things.iter_mut() {
         let vec = vector_field.get_vector(thing.pos());
-        thing
-            .positions
-            .push_back(thing.pos() + vec.normalize() * 5.0);
-
-        if thing.positions.len() > 50 {
-            thing.positions.pop_front();
-        }
+        thing.pos = thing.pos() + vec.normalize() * 5.0;
+        thing.age += 1;
     }
 
     things.retain(|ea| bounds.contains(ea.pos()));
@@ -133,12 +132,12 @@ pub fn view(app: &App, model: &Model, frame: Frame) {
 
     let bounds = app.window_rect();
     let draw = app.draw();
-    // .translate(pt3(-bounds.w() * 0.5, -bounds.h() * 0.5, 0.0));
 
+    draw.background().color(BLACK);
     // draw.rect()
     //     .xy(bounds.xy())
     //     .wh(bounds.wh())
-    //     .color(rgba(0.0, 0.0, 0.0, 0.1));
+    //     .color(rgba(0.0, 0.0, 0.0, 0.01));
 
     let State {
         vector_field: vf,
@@ -154,18 +153,25 @@ pub fn view(app: &App, model: &Model, frame: Frame) {
     // vf.draw(&draw);
 
     for thing in things {
-        let n = thing.positions.len();
-        for (i, (a, b)) in thing.positions.iter().tuple_windows().enumerate() {
-            // draw.ellipse().xy(*b).color(WHITE).radius(5.0);
-            let rel = i as f32 / n as f32;
-            draw.line()
-                .start(*a)
-                .end(*b)
-                // .color(rgba(rel, rel, rel, 1.0))
-                .color(rgba(rel, 0.0, 0.0, 1.0))
-                .caps_round()
-                .stroke_weight(thing.width * rel);
-        }
+        // let width = thing.age.min(20) as f32 * 0.1 * thing.width;
+        draw.ellipse()
+            .xy(thing.pos())
+            .color(WHITE)
+            // .stroke_color(BLACK)
+            // .stroke_weight(1.0)
+            .radius(thing.width);
+        // let n = thing.positions.len();
+        // for (i, (a, b)) in thing.positions.iter().tuple_windows().enumerate() {
+        //     // draw.ellipse().xy(*b).color(WHITE).radius(5.0);
+        //     let rel = i as f32 / n as f32;
+        //     draw.line()
+        //         .start(*a)
+        //         .end(*b)
+        //         // .color(rgba(rel, rel, rel, 1.0))
+        //         .color(rgba(rel, 0.0, 0.0, 1.0))
+        //         .caps_round()
+        //         .stroke_weight(thing.width * rel);
+        // }
     }
 
     draw.to_frame(app, &frame).unwrap();

@@ -426,7 +426,6 @@ If you can, don't use `hot-lib-reloader` in combination with `tracing`.
 mod error;
 mod lib_reload_events;
 mod lib_reloader;
-mod util;
 
 #[cfg(feature = "verbose")]
 mod log;
