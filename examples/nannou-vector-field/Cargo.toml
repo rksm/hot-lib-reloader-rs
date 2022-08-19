@@ -9,7 +9,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-hot-lib-reloader = { version = "^0.6", optional = true }
+hot-lib-reloader = { path = "../..", optional = true }
 lib = { path = "./lib" }
 nannou = { package = "nannou_dynamic", path = "./nannou_dynamic" }
 

@@ -1,6 +1,6 @@
 use hot_lib::*;
 
-#[hot_lib_reloader::hot_module(dylib = "lib", file_watch_debounce = 500)]
+#[hot_lib_reloader::hot_module(dylib = "lib", file_watch_debounce = 50)]
 mod hot_lib {
     pub use lib::*;
     pub use nannou::prelude::*;

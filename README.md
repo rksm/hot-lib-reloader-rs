@@ -48,6 +48,17 @@ This is build around the [libloading crate](https://crates.io/crates/libloading)
 To quicky generate a new project supporting hot-reload you can use a [cargo generate](https://cargo-generate.github.io/cargo-generate/) template: `cargo generate rksm/rust-hot-reload`.
 
 
+### Prerequisites
+
+#### macOS
+On macOS the reloadable library needs to get codesigned.
+For this purpose, hot-lib-reloader will try to use the `codesign` binary that is part of the XCode command line tools.
+It is recommended to make sure [those are installed](https://mac.install.guide/commandlinetools/).
+
+#### Other platforms
+It should work out of the box.
+
+
 ### Example project setup
 
 Assuming you use a workspace project with the following layout:

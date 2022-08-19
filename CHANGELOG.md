@@ -2,6 +2,11 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.6.2]
+### codesign libraries on macos
+On macos [spurious crashes](https://github.com/rksm/hot-lib-reloader-rs/issues/15) can happen after reloading the library. In order to avoid this, we will codesign the library when the `codesign` binary is available.
+
+
 ## [0.6.1]
 ### expose simple update check
 It is now possible to use a simple update check to test if the library was reloaded:
