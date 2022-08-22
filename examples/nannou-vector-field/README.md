@@ -1,6 +1,6 @@
 Hot-reload with [nannou](https://nannou.cc/).
 
-[![nannou hot-reload demo on youtube](https://img.youtube.com/vi/hyyeLtJ7SQk/0.jpg)](https://www.youtube.com/watch?v=hyyeLtJ7SQk)
+[![nannou hot-reload demo on youtube](https://robert.kra.hn/posts/hot-reloading-rust/nannou-youtube-thumb.png)](https://www.youtube.com/watch?v=hyyeLtJ7SQk)
 
 To run use
 

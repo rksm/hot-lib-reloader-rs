@@ -402,6 +402,7 @@ Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/
 - [reload-events](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-events): How to block reload to do serialization / deserialization.
 - [all-options](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/all-options): All options the `hot_module` macro accepts.
 - [bevy](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy): Shows how to hot-reload bevy systems.
+- [nannou](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/nannou-vector-field): Interactive generative art with [nannou](https://nannou.cc).
 
 
 
