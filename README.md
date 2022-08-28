@@ -402,6 +402,7 @@ Examples can be found at [rksm/hot-lib-reloader-rs/examples](https://github.com/
 - [all-options](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/all-options): All options the `hot_module` macro accepts.
 - [bevy](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy): Shows how to hot-reload bevy systems.
 - [nannou](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/nannou-vector-field): Interactive generative art with [nannou](https://nannou.cc).
+- [egui](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/hot-egui): How to hot-reload a native egui / eframe app.
 
 
 

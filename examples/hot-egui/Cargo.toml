@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = ["lib"]
+
+[package]
+name = "hot-egui"
+version = "0.1.0"
+authors = ["Robert Krahn <robert.krahn@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+eframe = "0.19.0"
+hot-lib-reloader = { version = "^0.6", optional = true }
+lib = { path = "./lib" }
+
+[features]
+default = []
+reload = ["dep:hot-lib-reloader"]
