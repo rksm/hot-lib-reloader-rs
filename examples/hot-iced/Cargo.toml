@@ -1,0 +1,9 @@
+[package]
+name = "hot-iced"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hot-lib-reloader = "0.6.2"
+iced = { version = "0.4.2", features = ["smol"] }
+lib = { version = "0.1.0", path = "lib" }
