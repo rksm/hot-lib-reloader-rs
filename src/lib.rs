@@ -351,24 +351,8 @@ Whether or not hot-reload is easy to use depends on how you architect your app. 
 For example, for a simple game where you have the main loop in your control, setting up the outer state in the main function and then passing it into a `fn update(state: &mut State)` and a `fn render(state: &State)` is a straightforward way to get two hot-reloadable functions.
 
 But even when using a framework that takes control, chances are that there are ways to have it call hot-reloadable code. The [bevy example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy) where system functions can be made hot-reloadable, shows how this can work.
+See the [egui](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/hot-egui) and [tokio](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-events) examples possible setupts.
 
-You can also wait for lib changes and run code afterwards.
-This is useful if you want to iterate over a program that only produces output once, for example work on a data analysis or visualization.
-This snippet shows how:
-
-```ignore
-#[hot_module(dylib = "lib")]
-mod hot_lib {
-    /*...*/
-    #[lib_change_subscription]
-    pub fn lib_reload_rx() -> mpsc::Receiver<ChangedEvent> {}
-}
-
-loop {
-    hot_lib::step();
-    // waits for a lib reload:
-    let event = rx.recv()?;
-}
 ```
 
 ## Adjust the file watch debounce duration
