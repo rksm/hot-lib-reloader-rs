@@ -353,7 +353,6 @@ For example, for a simple game where you have the main loop in your control, set
 But even when using a framework that takes control, chances are that there are ways to have it call hot-reloadable code. The [bevy example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/bevy) where system functions can be made hot-reloadable, shows how this can work.
 See the [egui](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/hot-egui) and [tokio](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-events) examples possible setupts.
 
-```
 
 ## Adjust the file watch debounce duration
 
