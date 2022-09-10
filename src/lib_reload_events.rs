@@ -189,12 +189,7 @@ impl LibReloadNotifier {
             let n = subscribers.len();
             log::trace!("sending {evt:?} to {n} subscribers");
             // keep only those subscribers that are still around and kicking.
-            subscribers.retain(|tx| {
-                if let Err(err) = tx.send(evt.clone()) {
-                    log::error!("Error sending event to subscriber: {err}");
-                }
-                true
-            });
+            subscribers.retain(|tx| tx.send(evt.clone()).is_ok());
             let removed = n - subscribers.len();
             if removed > 0 {
                 log::debug!(
