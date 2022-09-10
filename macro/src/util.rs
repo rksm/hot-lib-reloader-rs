@@ -21,7 +21,10 @@ pub fn ident_from_pat(
 /// - #[no_mangle] attribute
 /// It converts these functions into a [syn::ForeignItemFn] so that those can
 /// serve as lib function declarations of the lib reloader.
-pub fn read_unmangled_functions_from_file(file_name: LitStr) -> Result<Vec<(ForeignItemFn, Span)>> {
+pub fn read_functions_from_file(
+    file_name: LitStr,
+    ignore_no_mangle: bool,
+) -> Result<Vec<(ForeignItemFn, Span)>> {
     let span = file_name.span();
     let path: PathBuf = file_name.value().into();
 
@@ -44,15 +47,19 @@ pub fn read_unmangled_functions_from_file(file_name: LitStr) -> Result<Vec<(Fore
                     _ => continue,
                 };
 
-                let no_mangle = fun
-                    .attrs
-                    .iter()
-                    .filter_map(|attr| attr.path.get_ident())
-                    .any(|ident| *ident == "no_mangle");
+                // we can optionally assume that the function will be unmangled
+                // by other means than a direct attribute
+                if !ignore_no_mangle {
+                    let no_mangle = fun
+                        .attrs
+                        .iter()
+                        .filter_map(|attr| attr.path.get_ident())
+                        .any(|ident| *ident == "no_mangle");
 
-                if !no_mangle {
-                    continue;
-                };
+                    if !no_mangle {
+                        continue;
+                    };
+                }
 
                 let fun = ForeignItemFn {
                     attrs: Vec::new(),

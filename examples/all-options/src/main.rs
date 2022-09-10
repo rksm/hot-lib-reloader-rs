@@ -5,8 +5,9 @@
 mod hot_lib {
     pub use lib::*;
 
-    // embeds hot reloadable proxy functions for all public #[no_mangle] functions in that rust source file
-    hot_functions_from_file!("lib/src/lib.rs");
+    // embeds hot reloadable proxy functions for all public functions, even
+    // those that are not #[no_mangle] in that rust source file
+    hot_functions_from_file!("lib/src/lib.rs", ignore_no_mangle = true);
 
     // manually expose functions. Note there actually isn't such a function in lib.
     #[hot_functions]

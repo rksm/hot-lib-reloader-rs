@@ -2,7 +2,7 @@ use syn::{
     braced, bracketed, parse::ParseBuffer, spanned::Spanned, ForeignItemFn, LitBool, LitStr, Result,
 };
 
-use crate::util::read_unmangled_functions_from_file;
+use crate::util::read_functions_from_file;
 
 use super::types::{Field, PendingLibReloaderDefinition};
 
@@ -34,7 +34,7 @@ pub(crate) fn parse_field(
             while !file_name_stream.is_empty() {
                 let file_name = file_name_stream.parse()?;
                 def.lib_functions
-                    .extend(read_unmangled_functions_from_file(file_name)?);
+                    .extend(read_functions_from_file(file_name, false)?);
             }
         }
         Field::GenerateBevySystemFunctions => {
