@@ -2,6 +2,11 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.6.3]
+### fix `wait_for_about_to_reload` and `wait_for_reload` when no hot function was called.
+As [reported](https://github.com/rksm/hot-lib-reloader-rs/issues/21), when using the wait functions but not calling a hot-reloadable library function, the wait functions would continue to block even if the library was changed.
+This release fixes that, calling `wait_for_about_to_reload` and `wait_for_reload` should always return once a library change was made.
+
 ## [0.6.2]
 ### codesign libraries on macos
 On macos [spurious crashes](https://github.com/rksm/hot-lib-reloader-rs/issues/15) can happen after reloading the library. In order to avoid this, we will codesign the library when the `codesign` binary is available.

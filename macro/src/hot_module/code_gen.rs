@@ -29,6 +29,10 @@ pub(crate) fn generate_lib_loader_items(
         }
 
         fn __lib_loader_subscription() -> ::hot_lib_reloader::LibReloadObserver {
+            // Make sure that LIB_LOADER_INIT ran and the change messages are
+            // live, otherwise we would not get lib updates if none of the hot
+            // functions are called.
+            let _ = __lib_loader();
             __lib_notifier()
                 .write()
                 .expect("write lock notifier")
