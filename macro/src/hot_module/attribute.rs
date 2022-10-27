@@ -1,11 +1,10 @@
 use syn::{
-    punctuated::Punctuated, spanned::Spanned, token, Error, Lit, LitInt, LitStr, Meta,
-    MetaNameValue, NestedMeta, Result,
+    punctuated::Punctuated, spanned::Spanned, token, Error, ExprAssign, Ident, LitInt, Result,
 };
 
 pub(crate) struct HotModuleAttribute {
-    pub(crate) lib_name: syn::LitStr,
-    pub(crate) lib_dir: syn::LitStr,
+    pub(crate) lib_name: syn::Expr,
+    pub(crate) lib_dir: syn::Expr,
     pub(crate) file_watch_debounce_ms: syn::LitInt,
 }
 
@@ -16,40 +15,44 @@ impl syn::parse::Parse for HotModuleAttribute {
         let mut lib_dir = None;
         let mut file_watch_debounce_ms = None;
 
-        let args = Punctuated::<NestedMeta, token::Comma>::parse_separated_nonempty(stream)?;
+        let args = Punctuated::<syn::Expr, token::Comma>::parse_separated_nonempty(stream)?;
+
+        fn expr_is_ident<I: ?Sized>(expr: &syn::Expr, ident: &I) -> bool
+        where
+            Ident: PartialEq<I>,
+        {
+            if let syn::Expr::Path(syn::ExprPath { path, .. }) = expr {
+                path.is_ident(ident)
+            } else {
+                false
+            }
+        }
 
         for arg in args {
             match arg {
-                NestedMeta::Meta(meta) => {
-                    match meta {
-                        Meta::NameValue(MetaNameValue {
-                            lit: Lit::Str(lit),
-                            path,
-                            ..
-                        }) if path.is_ident("dylib") => {
-                            lib_name = Some(lit);
-                        }
+                syn::Expr::Assign(ExprAssign { left, right, .. }) => match *right {
+                    syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Int(lit),
+                        ..
+                    }) if expr_is_ident(&left, "file_watch_debounce") => {
+                        file_watch_debounce_ms = Some(lit.clone());
+                        continue;
+                    }
 
-                        Meta::NameValue(MetaNameValue {
-                            lit: Lit::Str(lit),
-                            path,
-                            ..
-                        }) if path.is_ident("lib_dir") => {
-                            lib_dir = Some(lit);
-                        }
+                    expr if expr_is_ident(&left, "dylib") => {
+                        lib_name = Some(expr);
+                        continue;
+                    }
 
-                        Meta::NameValue(MetaNameValue {
-                            lit: Lit::Int(lit),
-                            path,
-                            ..
-                        }) if path.is_ident("file_watch_debounce") => {
-                            file_watch_debounce_ms = Some(lit);
-                        }
+                    expr if expr_is_ident(&left, "lib_dir") => {
+                        lib_dir = Some(expr);
+                        continue;
+                    }
 
-                        _ => return Err(Error::new(meta.span(), "unexpected attribute field")),
-                    };
-                }
-                _ => return Err(Error::new(arg.span(), "unexpected attribute value")),
+                    _ => return Err(Error::new(left.span(), "unexpected attribute name")),
+                },
+
+                _ => return Err(Error::new(arg.span(), "unexpected input")),
             }
         }
 
@@ -66,9 +69,9 @@ impl syn::parse::Parse for HotModuleAttribute {
         let lib_dir = match lib_dir {
             None => {
                 if cfg!(debug_assertions) {
-                    LitStr::new("target/debug", stream.span())
+                    syn::parse_quote! { concat!(env!("CARGO_MANIFEST_DIR"), "/target/debug") }
                 } else {
-                    LitStr::new("target/release", stream.span())
+                    syn::parse_quote! { concat!(env!("CARGO_MANIFEST_DIR"), "/target/release") }
                 }
             }
             Some(lib_dir) => lib_dir,

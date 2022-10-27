@@ -2,6 +2,33 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.6.4]
+### Change the default `lib_dir` and allow expressions instead of just string literals for `lib_dir` and `dylib`
+This changes the defaults of `lib_dir` and `dylib` properties of the `hot_module` macro.
+Previously, specifying `#[hot_module(dylib = "lib")]` would expand into `#[hot_module(dylib = "lib", lib_dir = "target/debug")]` (debug build) or `#[hot_module(dylib = "lib", lib_dir = "target/release")]`.
+Now the `lib_dir` value is by defaults are:
+- `#[hot_module(dylib = "lib", lib_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/target/debug"))]` and
+- `#[hot_module(dylib = "lib", lib_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/target/release"))]`
+
+Also, both `dylib` and `lib_dir` can now be expressions (that should evaluate to something string like) instead of just literal strings.
+
+Changing the defaults actually constitutes a breaking change.
+I'm not bumping the minor version as I _assume_ no one depended on that.
+If this is not correct and that change breaks something I hereby sincerly apologies.
+You can get the old behavior back with
+
+```rust
+#[hot_module(
+    dylib = "lib",
+    lib_dir = if cfg!(debug_assertions) { "target/debug" } else { "target/release" },
+    file_watch_debounce = 500
+)]
+/* ... */
+```
+
+This change should fix the case when a program changes the current working directory and library loading doesn't work anymore thereafter.
+This was first reported in https://github.com/rksm/hot-lib-reloader-rs/issues/22.
+
 ## [0.6.3]
 ### fix `wait_for_about_to_reload` and `wait_for_reload` when no hot function was called.
 As [reported](https://github.com/rksm/hot-lib-reloader-rs/issues/21), when using the wait functions but not calling a hot-reloadable library function, the wait functions would continue to block even if the library was changed.

@@ -1,12 +1,12 @@
 use proc_macro2::Span;
-use syn::{token, FnArg, ItemFn, LitByteStr, LitStr, Result, VisPublic, Visibility};
+use syn::{token, Expr, FnArg, ItemFn, LitByteStr, LitStr, Result, VisPublic, Visibility};
 use syn::{ForeignItemFn, LitInt};
 
 use crate::util::ident_from_pat;
 
 pub(crate) fn generate_lib_loader_items(
-    lib_dir: &LitStr,
-    lib_name: &LitStr,
+    lib_dir: &Expr,
+    lib_name: &Expr,
     file_watch_debounce_ms: &LitInt,
     span: Span,
 ) -> Result<proc_macro2::TokenStream> {

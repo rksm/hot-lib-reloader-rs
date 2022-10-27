@@ -1,7 +1,11 @@
 // dylib: the platform independent library name, typically the crate name
 // lib_dir: where to find the library file. Defaults to "target/debug" and "target/release" for debug / release builds
 // file_watch_debounce: Debounce duration in milliseconds for the file watcher checking for library changes 500ms is the default.
-#[hot_lib_reloader::hot_module(dylib = "lib", lib_dir = "target/debug", file_watch_debounce = 500)]
+#[hot_lib_reloader::hot_module(
+    dylib = "lib",
+    lib_dir = if cfg!(debug_assertions) { "target/debug" } else { "target/release" },
+    file_watch_debounce = 500
+)]
 mod hot_lib {
     pub use lib::*;
 

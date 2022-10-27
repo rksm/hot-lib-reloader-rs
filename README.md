@@ -365,6 +365,24 @@ You can try to decrease it for faster reloads. With small libraries / fast hardw
 /* ... */
 ```
 
+### Change the name and location of the dylib file
+
+By default `hot-lib-reloader` assumes that there will be a dynamic library available in the `$CARGO_MANIFEST_DIR/target/debug/` or `$CARGO_MANIFEST_DIR/target/release` folder, depending on whether the debug or release profile is used.
+The name of the library is defined by the `dylib = "..."` portion of the `#[hot_module(...)]` macro.
+So by specifying `#[hot_module(dylib = "lib")]` and building with debug settings, `hot-lib-reloader` will try to load a `target/debug/liblib.dylib` on MacOS, a `target/debug/liblib.so` on Linux or a `target/debug/lib.dll` on Windows.
+
+If the library should be loaded from a different location you can specify this by setting the `lib_dir` attribute like:
+
+```rust
+#[hot_lib_reloader::hot_module(
+    dylib = "lib",
+    lib_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/target/debug")
+)]
+mod hot_lib {
+    /* ... */
+}
+```
+
 
 ### Debugging
 
