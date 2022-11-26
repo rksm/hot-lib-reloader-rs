@@ -1,3 +1,7 @@
+[workspace]
+resolver = "2"
+members = ["lib"]
+
 [package]
 name = "hot-iced"
 version = "0.1.0"
