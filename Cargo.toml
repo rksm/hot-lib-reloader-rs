@@ -26,6 +26,7 @@ lib_for_testing = { path = "tests/lib_for_testing" }
 [workspace]
 resolver = "2"
 members = ["macro", "macro-no-mangle-if-debug"]
+exclude = ["examples"]
 
 [features]
 default = []

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-iced = { version = "0.4.2", features = ["smol"] }
+iced = { version = "0.6", features = ["smol"] }
 
 [lib]
 crate-type = ["rlib", "dylib"]

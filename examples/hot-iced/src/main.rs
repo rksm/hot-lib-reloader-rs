@@ -1,5 +1,5 @@
 use hot_lib::*;
-use iced::{executor, Application, Command, Element, Settings, Subscription};
+use iced::{executor, Application, Command, Element, Settings, Subscription, Theme};
 
 #[hot_lib_reloader::hot_module(dylib = "lib")]
 mod hot_lib {
@@ -20,6 +20,7 @@ impl Application for App {
     type Executor = executor::Default;
     type Message = Message;
     type Flags = ();
+    type Theme = Theme;
 
     fn new(_flags: ()) -> (App, Command<Self::Message>) {
         (
@@ -42,7 +43,7 @@ impl Application for App {
         update(&mut self.state, message)
     }
 
-    fn view(&mut self) -> Element<Self::Message> {
-        view(&mut self.state)
+    fn view(&self) -> Element<Self::Message> {
+        view(&self.state)
     }
 }

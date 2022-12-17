@@ -1,4 +1,4 @@
-use iced::{Command, Element, Text};
+use iced::{widget::Text, Command, Element};
 use std::time::Instant;
 
 #[derive(Debug, Clone, Copy)]
@@ -30,6 +30,6 @@ pub fn update(state: &mut State, message: Message) -> Command<Message> {
 }
 
 #[no_mangle]
-pub fn view<'a>(state: &mut State) -> Element<'a, Message> {
+pub fn view<'a>(state: &State) -> Element<'a, Message> {
     Text::new(format!("The time is {:?}!", state.time)).into()
 }
