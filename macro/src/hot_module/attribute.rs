@@ -6,6 +6,7 @@ pub(crate) struct HotModuleAttribute {
     pub(crate) lib_name: syn::Expr,
     pub(crate) lib_dir: syn::Expr,
     pub(crate) file_watch_debounce_ms: syn::LitInt,
+    pub(crate) crate_name: syn::Path,
 }
 
 // Parses something like `#[hot(name = "lib")]`.
@@ -14,6 +15,7 @@ impl syn::parse::Parse for HotModuleAttribute {
         let mut lib_name = None;
         let mut lib_dir = None;
         let mut file_watch_debounce_ms = None;
+        let mut crate_name = None;
 
         let args = Punctuated::<syn::Expr, token::Comma>::parse_separated_nonempty(stream)?;
 
@@ -46,6 +48,19 @@ impl syn::parse::Parse for HotModuleAttribute {
 
                     expr if expr_is_ident(&left, "lib_dir") => {
                         lib_dir = Some(expr);
+                        continue;
+                    }
+
+                    expr if expr_is_ident(&left, "crate") => {
+                        let span = expr.span().clone();
+                        let s = match match expr {
+                            syn::Expr::Lit(syn::ExprLit { lit, .. }) => lit,
+                            _ => return Err(Error::new(left.span(), "unexpected expression type")),
+                        } {
+                            syn::Lit::Str(s) => s,
+                            _ => return Err(Error::new(span, "unexpected expression type")),
+                        };
+                        crate_name = Some(s.parse::<syn::Path>().clone()?);
                         continue;
                     }
 
@@ -82,10 +97,16 @@ impl syn::parse::Parse for HotModuleAttribute {
             Some(file_watch_debounce_ms) => file_watch_debounce_ms,
         };
 
+        let crate_name = match crate_name {
+            None => syn::parse_quote! { ::hot_lib_reloader },
+            Some(crate_name) => crate_name,
+        };
+
         Ok(HotModuleAttribute {
             lib_name,
             lib_dir,
             file_watch_debounce_ms,
+            crate_name,
         })
     }
 }

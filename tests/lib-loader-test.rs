@@ -1,11 +1,13 @@
 mod common;
 
-#[hot_lib_reloader::hot_module(dylib = "lib_for_testing", file_watch_debounce = 50)]
+use hot_lib_reloader as hlibr_crate_alias;
+
+#[hlibr_crate_alias::hot_module(dylib = "lib_for_testing", file_watch_debounce = 50, crate = "super::hlibr_crate_alias")]
 mod hot_lib {
     hot_functions_from_file!("tests/lib_for_testing/src/lib.rs");
 
     #[lib_change_subscription]
-    pub fn subscribe() -> hot_lib_reloader::LibReloadObserver {}
+    pub fn subscribe() -> super::hlibr_crate_alias::LibReloadObserver {}
 
     #[lib_version]
     pub fn version() -> usize {}
@@ -57,7 +59,7 @@ fn test() {
             // wait for reload to be completed
             lib_observer.wait_for_reload();
 
-            // make rue lib is new
+            // make sure lib is new
             let n = hot_lib::do_more_stuff(Box::new(hot_lib::do_stuff));
             assert_eq!(n, 7);
             assert_eq!(hot_lib::version(), 1);

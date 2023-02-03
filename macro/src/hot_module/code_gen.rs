@@ -1,5 +1,5 @@
 use proc_macro2::Span;
-use syn::{token, Expr, FnArg, ItemFn, LitByteStr, LitStr, Result, VisPublic, Visibility};
+use syn::{token, Expr, Path, FnArg, ItemFn, LitByteStr, LitStr, Result, VisPublic, Visibility};
 use syn::{ForeignItemFn, LitInt};
 
 use crate::util::ident_from_pat;
@@ -8,13 +8,14 @@ pub(crate) fn generate_lib_loader_items(
     lib_dir: &Expr,
     lib_name: &Expr,
     file_watch_debounce_ms: &LitInt,
+    crate_name: &Path,
     span: Span,
 ) -> Result<proc_macro2::TokenStream> {
     let result = quote::quote_spanned! {span=>
-        static mut LIB_CHANGE_NOTIFIER: Option<::std::sync::Arc<::std::sync::RwLock<::hot_lib_reloader::LibReloadNotifier>>> = None;
+        static mut LIB_CHANGE_NOTIFIER: Option<::std::sync::Arc<::std::sync::RwLock<#crate_name::LibReloadNotifier>>> = None;
         static LIB_CHANGE_NOTIFIER_INIT: ::std::sync::Once = ::std::sync::Once::new();
 
-        fn __lib_notifier() -> ::std::sync::Arc<::std::sync::RwLock<::hot_lib_reloader::LibReloadNotifier>> {
+        fn __lib_notifier() -> ::std::sync::Arc<::std::sync::RwLock<#crate_name::LibReloadNotifier>> {
             LIB_CHANGE_NOTIFIER_INIT.call_once(|| {
                 let notifier = ::std::sync::Arc::new(::std::sync::RwLock::new(Default::default()));
                 // Safety: guarded by Once, will only be called one time.
@@ -28,7 +29,7 @@ pub(crate) fn generate_lib_loader_items(
             unsafe { LIB_CHANGE_NOTIFIER.as_ref().cloned().unwrap() }
         }
 
-        fn __lib_loader_subscription() -> ::hot_lib_reloader::LibReloadObserver {
+        fn __lib_loader_subscription() -> #crate_name::LibReloadObserver {
             // Make sure that LIB_LOADER_INIT ran and the change messages are
             // live, otherwise we would not get lib updates if none of the hot
             // functions are called.
@@ -39,7 +40,7 @@ pub(crate) fn generate_lib_loader_items(
                 .subscribe()
         }
 
-        static mut LIB_LOADER: Option<::std::sync::Arc<::std::sync::RwLock<::hot_lib_reloader::LibReloader>>> = None;
+        static mut LIB_LOADER: Option<::std::sync::Arc<::std::sync::RwLock<#crate_name::LibReloader>>> = None;
         static LIB_LOADER_INIT: ::std::sync::Once = ::std::sync::Once::new();
 
         // version counter that counts the reloads
@@ -47,9 +48,9 @@ pub(crate) fn generate_lib_loader_items(
         // for simple queries
         static WAS_UPDATED: ::std::sync::atomic::AtomicBool = ::std::sync::atomic::AtomicBool::new(false);
 
-        fn __lib_loader() -> ::std::sync::Arc<::std::sync::RwLock<::hot_lib_reloader::LibReloader>> {
+        fn __lib_loader() -> ::std::sync::Arc<::std::sync::RwLock<#crate_name::LibReloader>> {
             LIB_LOADER_INIT.call_once(|| {
-                let mut lib_loader = ::hot_lib_reloader::LibReloader::new(#lib_dir, #lib_name, Some(::std::time::Duration::from_millis(#file_watch_debounce_ms)))
+                let mut lib_loader = #crate_name::LibReloader::new(#lib_dir, #lib_name, Some(::std::time::Duration::from_millis(#file_watch_debounce_ms)))
                     .expect("failed to create hot reload loader");
 
                 let change_rx = lib_loader.subscribe_to_file_changes();
@@ -72,14 +73,14 @@ pub(crate) fn generate_lib_loader_items(
                                 if let Ok(mut lib_loader) = lib_loader_for_update.try_write() {
                                     if let Some(first_lock_attempt) = first_lock_attempt {
                                         let duration: ::std::time::Duration = first_lock_attempt - ::std::time::Instant::now();
-                                        ::hot_lib_reloader::LibReloader::log_info(&format!("...got write lock after {}ms!", duration.as_millis()));
+                                        #crate_name::LibReloader::log_info(&format!("...got write lock after {}ms!", duration.as_millis()));
                                     }
                                     let _ = !lib_loader.update().expect("hot lib update()");
                                     break;
                                 }
                                 if first_lock_attempt.is_none() {
                                     first_lock_attempt = Some(::std::time::Instant::now());
-                                    ::hot_lib_reloader::LibReloader::log_info("trying to get a write lock...");
+                                    #crate_name::LibReloader::log_info("trying to get a write lock...");
                                 }
                                 ::std::thread::sleep(::std::time::Duration::from_millis(1));
                             }
