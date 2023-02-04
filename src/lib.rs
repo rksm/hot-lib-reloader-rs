@@ -3,7 +3,7 @@
 /*!
 
 [![Crates.io](https://img.shields.io/crates/v/hot-lib-reloader)](https://crates.io/crates/hot-lib-reloader)
-[![](https://docs.rs/structopt/badge.svg)](https://docs.rs/hot-lib-reloader)
+[![](https://docs.rs/hot-lib-reloader/badge.svg)](https://docs.rs/hot-lib-reloader)
 [![CI](https://github.com/rksm/hot-lib-reloader-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/rksm/hot-lib-reloader-rs/actions/workflows/ci.yml)
 [![License](https://img.shields.io/crates/l/hot-lib-reloader?color=informational&logo=mit)](/LICENSE.md)
 
