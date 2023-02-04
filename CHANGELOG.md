@@ -2,6 +2,11 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.6.5]
+###  Add crate attribute to hot_module proc-macro
+- Make it possible for users to specify what crate name is inside the generated module code.
+- See https://github.com/rksm/hot-lib-reloader-rs/pull/28
+
 ## [0.6.4]
 ### Change the default `lib_dir` and allow expressions instead of just string literals for `lib_dir` and `dylib`
 This changes the defaults of `lib_dir` and `dylib` properties of the `hot_module` macro.
