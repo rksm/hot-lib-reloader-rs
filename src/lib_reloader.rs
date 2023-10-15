@@ -43,6 +43,7 @@ pub struct LibReloader {
     file_change_subscribers: Arc<Mutex<Vec<mpsc::Sender<()>>>>,
     #[cfg(target_os = "macos")]
     codesigner: crate::codesign::CodeSigner,
+    loaded_lib_name_template: Option<String>
 }
 
 impl LibReloader {
@@ -57,6 +58,7 @@ impl LibReloader {
         lib_dir: impl AsRef<Path>,
         lib_name: impl AsRef<str>,
         file_watch_debounce: Option<Duration>,
+        loaded_lib_name_template: Option<String>,
     ) -> Result<Self, HotReloaderError> {
         // find the target dir in which the build is happening and where we should find
         // the library
@@ -69,7 +71,7 @@ impl LibReloader {
         let codesigner = crate::codesign::CodeSigner::new();
 
         let (watched_lib_file, loaded_lib_file) =
-            watched_and_loaded_library_paths(&lib_dir, &lib_name, load_counter);
+            watched_and_loaded_library_paths(&lib_dir, &lib_name, load_counter, &loaded_lib_name_template);
 
         let (lib_file_hash, lib) = if watched_lib_file.exists() {
             // We don't load the actual lib because this can get problems e.g. on Windows
@@ -108,6 +110,7 @@ impl LibReloader {
             file_change_subscribers,
             #[cfg(target_os = "macos")]
             codesigner,
+            loaded_lib_name_template
         };
 
         Ok(lib_loader)
@@ -145,6 +148,7 @@ impl LibReloader {
             watched_lib_file,
             loaded_lib_file,
             lib,
+            loaded_lib_name_template,
             ..
         } = self;
 
@@ -161,7 +165,7 @@ impl LibReloader {
         if watched_lib_file.exists() {
             *load_counter += 1;
             let (_, loaded_lib_file) =
-                watched_and_loaded_library_paths(lib_dir, lib_name, *load_counter);
+                watched_and_loaded_library_paths(lib_dir, lib_name, *load_counter, &loaded_lib_name_template);
             log::trace!("copy {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(watched_lib_file, &loaded_lib_file)?;
             self.lib_file_hash
@@ -303,6 +307,7 @@ fn watched_and_loaded_library_paths(
     lib_dir: impl AsRef<Path>,
     lib_name: impl AsRef<str>,
     load_counter: usize,
+    loaded_lib_name_template: &Option<impl AsRef<str>>
 ) -> (PathBuf, PathBuf) {
     let lib_dir = &lib_dir.as_ref();
 
@@ -317,7 +322,16 @@ fn watched_and_loaded_library_paths(
 
     let watched_lib_file = lib_dir.join(&lib_name).with_extension(ext);
     let loaded_lib_file = lib_dir
-        .join(format!("{lib_name}-hot-{load_counter}"))
+        .join(match loaded_lib_name_template {
+            Some(loaded_lib_name_template) =>
+                loaded_lib_name_template.as_ref()
+                    .replace("{lib_name}", &lib_name)
+                    .replace("{load_counter}", &load_counter.to_string())
+                    .replace("{pid}", &std::process::id().to_string())
+                    .replace("{rand}", &rand::random::<u32>().to_string())
+                    .replace("{uuid}", &uuid::Uuid::new_v4().to_string()),
+            None => format!("{lib_name}-hot-{load_counter}")
+        })
         .with_extension(ext);
     (watched_lib_file, loaded_lib_file)
 }

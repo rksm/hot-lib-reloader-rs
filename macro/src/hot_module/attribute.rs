@@ -7,6 +7,7 @@ pub(crate) struct HotModuleAttribute {
     pub(crate) lib_dir: syn::Expr,
     pub(crate) file_watch_debounce_ms: syn::LitInt,
     pub(crate) crate_name: syn::Path,
+    pub(crate) loaded_lib_name_template: syn::Expr,
 }
 
 // Parses something like `#[hot(name = "lib")]`.
@@ -16,6 +17,7 @@ impl syn::parse::Parse for HotModuleAttribute {
         let mut lib_dir = None;
         let mut file_watch_debounce_ms = None;
         let mut crate_name = None;
+        let mut loaded_lib_name_template = None;
 
         let args = Punctuated::<syn::Expr, token::Comma>::parse_separated_nonempty(stream)?;
 
@@ -64,6 +66,11 @@ impl syn::parse::Parse for HotModuleAttribute {
                         continue;
                     }
 
+                    expr if expr_is_ident(&left, "loaded_lib_name_template") => {
+                        loaded_lib_name_template = Some(expr);
+                        continue;
+                    }
+
                     _ => return Err(Error::new(left.span(), "unexpected attribute name")),
                 },
 
@@ -102,11 +109,17 @@ impl syn::parse::Parse for HotModuleAttribute {
             Some(crate_name) => crate_name,
         };
 
+        let loaded_lib_name_template = match loaded_lib_name_template {
+            None => syn::parse_quote! { Option::None },
+            Some(loaded_lib_name_template) => syn::parse_quote! { Some(#loaded_lib_name_template.to_string()) },
+        };
+
         Ok(HotModuleAttribute {
             lib_name,
             lib_dir,
             file_watch_debounce_ms,
             crate_name,
+            loaded_lib_name_template,
         })
     }
 }

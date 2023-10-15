@@ -235,13 +235,14 @@ impl quote::ToTokens for HotModule {
             lib_dir,
             file_watch_debounce_ms,
             crate_name,
+            loaded_lib_name_template,
         } = match hot_module_args {
             None => panic!("Expected to have macro attributes"),
             Some(attributes) => attributes,
         };
 
         let lib_loader =
-            generate_lib_loader_items(lib_dir, lib_name, file_watch_debounce_ms, crate_name, tokens.span())
+            generate_lib_loader_items(lib_dir, lib_name, file_watch_debounce_ms, crate_name, loaded_lib_name_template, tokens.span())
                 .expect("error generating hot lib loader helpers");
 
         let module_def = quote::quote! {
