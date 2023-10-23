@@ -321,17 +321,27 @@ fn watched_and_loaded_library_paths(
     let lib_name = format!("{prefix}{}", lib_name.as_ref());
 
     let watched_lib_file = lib_dir.join(&lib_name).with_extension(ext);
+
+    let loaded_lib_filename = match loaded_lib_name_template {
+        Some(loaded_lib_name_template) => {
+            let mut result = loaded_lib_name_template.as_ref()
+                .replace("{lib_name}", &lib_name)
+                .replace("{load_counter}", &load_counter.to_string())
+                .replace("{pid}", &std::process::id().to_string());
+            #[cfg(feature = "rand")]
+            {
+                result = result.replace("{rand}", &rand::random::<u32>().to_string());
+            }
+            #[cfg(feature = "uuid")]
+            {
+                result = result.replace("{uuid}", &uuid::Uuid::new_v4().to_string());
+            }
+            result
+        }
+        None => format!("{lib_name}-hot-{load_counter}")
+    };
     let loaded_lib_file = lib_dir
-        .join(match loaded_lib_name_template {
-            Some(loaded_lib_name_template) =>
-                loaded_lib_name_template.as_ref()
-                    .replace("{lib_name}", &lib_name)
-                    .replace("{load_counter}", &load_counter.to_string())
-                    .replace("{pid}", &std::process::id().to_string())
-                    .replace("{rand}", &rand::random::<u32>().to_string())
-                    .replace("{uuid}", &uuid::Uuid::new_v4().to_string()),
-            None => format!("{lib_name}-hot-{load_counter}")
-        })
+        .join(loaded_lib_filename)
         .with_extension(ext);
     (watched_lib_file, loaded_lib_file)
 }
