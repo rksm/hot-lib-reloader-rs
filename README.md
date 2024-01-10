@@ -250,6 +250,8 @@ Since `#[no_mangle]` does not support generics, generic functions can't be named
 
 If your hot-reload library contains global state (or depends on a library that does), you will need to re-initialize it after reload. This can be a problem with libraries that hide the global state from the user. If you need to use global state, keep it inside the executable and pass it into the reloadable functions if possible.
 
+Note also that "global state" is more than just global variables. As noted in [this issue](https://github.com/rksm/hot-lib-reloader-rs/issues/34), crates relying on the [TypeId](https://doc.rust-lang.org/std/any/struct.TypeId.html) of a type (like most ECS systems do) will expect the type/id mapping to be constant. After reloading, types will have different ids, however, which makes (de)serialization more challenging.
+
 
 
 ### Use feature flags to switch between hot-reload and static code
