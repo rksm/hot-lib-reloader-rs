@@ -4,7 +4,8 @@
 #[hot_lib_reloader::hot_module(
     dylib = "lib",
     lib_dir = if cfg!(debug_assertions) { "target/debug" } else { "target/release" },
-    file_watch_debounce = 500
+    file_watch_debounce = 500,
+    loaded_lib_name_template = "{lib_name}_hot_{pid}_{load_counter}"
 )]
 mod hot_lib {
     pub use lib::*;

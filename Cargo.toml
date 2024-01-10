@@ -18,8 +18,7 @@ libloading = "^0.7"
 log = "0.4.17"
 notify = "^4"
 thiserror = "1.0.32"
-rand = { version = "0.8.5", optional = true }
-uuid = {  version = "1.4.1", features = ["v4"], optional = true }
+uuid = { version = "1.4.1", features = ["v4"], optional = true }
 
 [dev-dependencies]
 env_logger = "^0.9"
@@ -33,5 +32,4 @@ exclude = ["examples"]
 [features]
 default = []
 verbose = []
-rand = [ "dep:rand" ]
-uuid = [ "dep:uuid" ]
+uuid = ["dep:uuid"]

@@ -396,7 +396,6 @@ This attribute allows for placeholders that can be dynamically replaced:
 | `{lib_name}`      | Name of the library as defined in your code        | None          |
 | `{load_counter}`  | Incremental counter for each hot reload            | None          |
 | `{pid}`           | Process ID of the running application              | None          |
-| `{rand}`          | A random `u32` value                               | `rand`        |
 | `{uuid}`          | A UUID v4 string                                   | `uuid`        |
 
 If you don't specify the `loaded_lib_name_template` parameter, a default naming convention is used for the shadow filename. 
@@ -405,9 +404,9 @@ This default pattern is: `{lib_name}-hot-{load_counter}`.
 ```rust
 #[hot_lib_reloader::hot_module(
     dylib = "lib",
-    // Might result in the following shadow file lib_hot_2644_0_3945339610_5e659d6e-b78c-4682-9cdd-b8a0cd3e8fc6.dll
-    // Requires the 'rand' and 'uuid' feature flags for the {rand} and {uuid} placeholders
-    loaded_lib_name_template = "{lib_name}_hot_{pid}_{load_counter}_{rand}_{uuid}"
+    // Might result in the following shadow file lib_hot_2644_0_5e659d6e-b78c-4682-9cdd-b8a0cd3e8fc6.dll
+    // Requires the 'uuid' feature flags for the {uuid} placeholder
+    loaded_lib_name_template = "{lib_name}_hot_{pid}_{load_counter}_{uuid}"
 )]
 mod hot_lib {
     /* ... */
