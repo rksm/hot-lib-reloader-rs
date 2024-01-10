@@ -251,6 +251,7 @@ Since `#[no_mangle]` does not support generics, generic functions can't be named
 
 If your hot-reload library contains global state (or depends on a library that does), you will need to re-initialize it after reload. This can be a problem with libraries that hide the global state from the user. If you need to use global state, keep it inside the executable and pass it into the reloadable functions if possible.
 
+Note also that "global state" is more than just global variables. As noted in [this issue](https://github.com/rksm/hot-lib-reloader-rs/issues/34), crates relying on the [TypeId](https://doc.rust-lang.org/std/any/struct.TypeId.html) of a type (like most ECS systems do) will expect the type/id mapping to be constant. After reloading, types will have different ids, however, which makes (de)serialization more challenging.
 
 
 ## Use feature flags to switch between hot-reload and static code
@@ -378,6 +379,34 @@ If the library should be loaded from a different location you can specify this b
 #[hot_lib_reloader::hot_module(
     dylib = "lib",
     lib_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/target/debug")
+)]
+mod hot_lib {
+    /* ... */
+}
+```
+
+### Adjust the dylib filename
+
+The `hot_module` macro allows setting the shadow file name using the `loaded_lib_name_template` parameter.
+This is useful when multiple processes are trying to hot reload the same library and can be used to prevent conflicts.
+This attribute allows for placeholders that can be dynamically replaced:
+
+| Placeholder       | Description                                        | Feature Flag  |
+|-------------------|----------------------------------------------------|---------------|
+| `{lib_name}`      | Name of the library as defined in your code        | None          |
+| `{load_counter}`  | Incremental counter for each hot reload            | None          |
+| `{pid}`           | Process ID of the running application              | None          |
+| `{uuid}`          | A UUID v4 string                                   | `uuid`        |
+
+If you don't specify the `loaded_lib_name_template` parameter, a default naming convention is used for the shadow filename.
+This default pattern is: `{lib_name}-hot-{load_counter}`.
+
+```rust
+#[hot_lib_reloader::hot_module(
+    dylib = "lib",
+    // Might result in the following shadow file lib_hot_2644_0_5e659d6e-b78c-4682-9cdd-b8a0cd3e8fc6.dll
+    // Requires the 'uuid' feature flags for the {uuid} placeholder
+    loaded_lib_name_template = "{lib_name}_hot_{pid}_{load_counter}_{uuid}"
 )]
 mod hot_lib {
     /* ... */

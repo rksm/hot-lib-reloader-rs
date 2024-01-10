@@ -2,7 +2,7 @@
 
 
 [![Crates.io](https://img.shields.io/crates/v/hot-lib-reloader)](https://crates.io/crates/hot-lib-reloader)
-[![](https://docs.rs/structopt/badge.svg)](https://docs.rs/hot-lib-reloader)
+[![](https://docs.rs/hot-lib-reloader/badge.svg)](https://docs.rs/hot-lib-reloader)
 [![CI](https://github.com/rksm/hot-lib-reloader-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/rksm/hot-lib-reloader-rs/actions/workflows/ci.yml)
 [![License](https://img.shields.io/crates/l/hot-lib-reloader?color=informational&logo=mit)](/LICENSE.md)
 
@@ -253,7 +253,6 @@ If your hot-reload library contains global state (or depends on a library that d
 Note also that "global state" is more than just global variables. As noted in [this issue](https://github.com/rksm/hot-lib-reloader-rs/issues/34), crates relying on the [TypeId](https://doc.rust-lang.org/std/any/struct.TypeId.html) of a type (like most ECS systems do) will expect the type/id mapping to be constant. After reloading, types will have different ids, however, which makes (de)serialization more challenging.
 
 
-
 ### Use feature flags to switch between hot-reload and static code
 
 See the [reload-feature example](https://github.com/rksm/hot-lib-reloader-rs/tree/master/examples/reload-feature) for a complete project.
@@ -385,9 +384,9 @@ mod hot_lib {
 }
 ```
 
-### Adjust the shadow filename
+#### Adjust the dylib filename
 
-The `hot_module` macro allows setting the shadow file name using the `loaded_lib_name_template` parameter. 
+The `hot_module` macro allows setting the shadow file name using the `loaded_lib_name_template` parameter.
 This is useful when multiple processes are trying to hot reload the same library and can be used to prevent conflicts.
 This attribute allows for placeholders that can be dynamically replaced:
 
@@ -398,7 +397,7 @@ This attribute allows for placeholders that can be dynamically replaced:
 | `{pid}`           | Process ID of the running application              | None          |
 | `{uuid}`          | A UUID v4 string                                   | `uuid`        |
 
-If you don't specify the `loaded_lib_name_template` parameter, a default naming convention is used for the shadow filename. 
+If you don't specify the `loaded_lib_name_template` parameter, a default naming convention is used for the shadow filename.
 This default pattern is: `{lib_name}-hot-{load_counter}`.
 
 ```rust
@@ -412,6 +411,7 @@ mod hot_lib {
     /* ... */
 }
 ```
+
 
 ### Debugging
 
