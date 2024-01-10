@@ -2,28 +2,6 @@ mod hot_module;
 mod lib_reloader;
 mod util;
 
-/// This is the deprecated way of defining a type for calling into reloadable code.
-///
-/// Parses a construct like
-///
-/// ```ignore
-/// unsafe MyLibLoader {
-///     lib_dir: "target/debug",
-///     lib_name: "lib",
-///     functions: {
-///         fn test<'a>(arg1: &'a str, arg2: u8) -> String;
-///     },
-///     source_files: ["path/to/lib.rs"],
-///     generate_bevy_systems: true
-/// }
-/// ```
-#[deprecated]
-#[proc_macro]
-pub fn define_lib_reloader(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    let input = syn::parse_macro_input!(input as lib_reloader::LibReloaderDefinition);
-    (quote::quote! { #input }).into()
-}
-
 /// This macro is the top-level interface for making a dynamic Rust library
 /// hot-reloadable. The attribute macro will insert code into the module it
 /// accompanies that will do several things:

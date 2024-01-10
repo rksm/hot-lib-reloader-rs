@@ -467,6 +467,6 @@ mod log;
 mod codesign;
 
 pub use error::HotReloaderError;
-pub use hot_lib_reloader_macro::{define_lib_reloader, hot_module};
+pub use hot_lib_reloader_macro::hot_module;
 pub use lib_reload_events::{BlockReload, ChangedEvent, LibReloadNotifier, LibReloadObserver};
 pub use lib_reloader::LibReloader;
