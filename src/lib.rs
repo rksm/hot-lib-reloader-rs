@@ -14,6 +14,7 @@ This allows to do "live programming" where you modify code and immediately see t
 
 This is build around the [libloading crate](https://crates.io/crates/libloading) and will require you to put code you want to hot-reload inside a Rust library (dylib). For a detailed discussion about the idea and implementation see [this blog post](https://robert.kra.hn/posts/hot-reloading-rust).
 
+For a demo and explanation see also [this Rust and Tell presentation](https://www.youtube.com/watch?v=-UUImyqX8j0).
 
 # Table of contents:
 
