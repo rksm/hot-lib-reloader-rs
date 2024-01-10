@@ -5,6 +5,8 @@ mod hot_lib {
 }
 
 fn main() {
+    // Use RUST_LOG=hot_lib_reloader=trace to see all related logs
+    env_logger::init();
     let mut state = hot_lib::State { counter: 0 };
     loop {
         hot_lib::do_stuff(&mut state);
