@@ -8,3 +8,4 @@ DEV.org
 /examples/macro-test.rs
 /examples/input-files/
 .DS_Store
+/scratch.el
