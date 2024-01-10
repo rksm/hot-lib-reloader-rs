@@ -9,6 +9,7 @@ pub(crate) fn generate_lib_loader_items(
     lib_name: &Expr,
     file_watch_debounce_ms: &LitInt,
     crate_name: &Path,
+    loaded_lib_name_template: &Expr,
     span: Span,
 ) -> Result<proc_macro2::TokenStream> {
     let result = quote::quote_spanned! {span=>
@@ -50,7 +51,7 @@ pub(crate) fn generate_lib_loader_items(
 
         fn __lib_loader() -> ::std::sync::Arc<::std::sync::RwLock<#crate_name::LibReloader>> {
             LIB_LOADER_INIT.call_once(|| {
-                let mut lib_loader = #crate_name::LibReloader::new(#lib_dir, #lib_name, Some(::std::time::Duration::from_millis(#file_watch_debounce_ms)))
+                let mut lib_loader = #crate_name::LibReloader::new(#lib_dir, #lib_name, Some(::std::time::Duration::from_millis(#file_watch_debounce_ms)), #loaded_lib_name_template)
                     .expect("failed to create hot reload loader");
 
                 let change_rx = lib_loader.subscribe_to_file_changes();
