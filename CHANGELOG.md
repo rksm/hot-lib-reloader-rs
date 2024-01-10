@@ -2,6 +2,16 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.7.0]
+### Add: Adjust the library filename
+The `hot_module` macro now allows to customize the library filename e.g. `loaded_lib_name_template = "{lib_name}_hot_{pid}_{load_counter}"` will result in a library name that is unique per process than the default `{lib_name}-hot-{load_counter}`. With the optional `uuid` feature you can make make the name fully random.
+Thank you @CryoMyst!
+
+### Change: Updated crate dependencies
+- `notify` v6 should be more reliable
+
+### Remove: Finally remove the deprecated `define_lib_reloader` macro.
+
 ## [0.6.5]
 ###  Add crate attribute to hot_module proc-macro
 - Make it possible for users to specify what crate name is inside the generated module code.
