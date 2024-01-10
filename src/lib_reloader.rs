@@ -1,16 +1,12 @@
-use libloading::Library;
-use libloading::Symbol;
-use notify::watcher;
-use notify::DebouncedEvent;
-use notify::RecursiveMode;
-use notify::Watcher;
+use libloading::{Library, Symbol};
+use notify::{RecursiveMode, Watcher};
+use notify_debouncer_full::new_debouncer;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::AtomicU32;
-use std::sync::atomic::Ordering;
-use std::sync::Mutex;
-use std::sync::{mpsc, Arc};
+use std::sync::{
+    atomic::{AtomicBool, AtomicU32, Ordering},
+    mpsc, Arc, Mutex,
+};
 use std::thread;
 use std::time::Duration;
 
@@ -43,7 +39,7 @@ pub struct LibReloader {
     file_change_subscribers: Arc<Mutex<Vec<mpsc::Sender<()>>>>,
     #[cfg(target_os = "macos")]
     codesigner: crate::codesign::CodeSigner,
-    loaded_lib_name_template: Option<String>
+    loaded_lib_name_template: Option<String>,
 }
 
 impl LibReloader {
@@ -70,8 +66,12 @@ impl LibReloader {
         #[cfg(target_os = "macos")]
         let codesigner = crate::codesign::CodeSigner::new();
 
-        let (watched_lib_file, loaded_lib_file) =
-            watched_and_loaded_library_paths(&lib_dir, &lib_name, load_counter, &loaded_lib_name_template);
+        let (watched_lib_file, loaded_lib_file) = watched_and_loaded_library_paths(
+            &lib_dir,
+            &lib_name,
+            load_counter,
+            &loaded_lib_name_template,
+        );
 
         let (lib_file_hash, lib) = if watched_lib_file.exists() {
             // We don't load the actual lib because this can get problems e.g. on Windows
@@ -110,7 +110,7 @@ impl LibReloader {
             file_change_subscribers,
             #[cfg(target_os = "macos")]
             codesigner,
-            loaded_lib_name_template
+            loaded_lib_name_template,
         };
 
         Ok(lib_loader)
@@ -164,8 +164,12 @@ impl LibReloader {
 
         if watched_lib_file.exists() {
             *load_counter += 1;
-            let (_, loaded_lib_file) =
-                watched_and_loaded_library_paths(lib_dir, lib_name, *load_counter, &loaded_lib_name_template);
+            let (_, loaded_lib_file) = watched_and_loaded_library_paths(
+                lib_dir,
+                lib_name,
+                *load_counter,
+                loaded_lib_name_template,
+            );
             log::trace!("copy {watched_lib_file:?} -> {loaded_lib_file:?}");
             fs::copy(watched_lib_file, &loaded_lib_file)?;
             self.lib_file_hash
@@ -196,13 +200,24 @@ impl LibReloader {
         // a pending change still waiting to be loaded, set `self.changed` to true. This
         // then gets picked up by `self.update`.
         thread::spawn(move || {
-            use DebouncedEvent::*;
-
             let (tx, rx) = mpsc::channel();
-            let mut watcher = watcher(tx, debounce).unwrap();
-            watcher
+
+            let mut debouncer =
+                new_debouncer(debounce, None, tx).expect("creating notify debouncer");
+
+            debouncer
+                .watcher()
                 .watch(&lib_file, RecursiveMode::NonRecursive)
                 .expect("watch lib file");
+
+            // debouncer
+            //     .cache()
+            //     .add_root(dir.path(), RecursiveMode::Recursive);
+
+            // let mut watcher = RecommendedWatcher::new(tx, Config::default()).unwrap();
+            // watcher
+            //     .watch(&lib_file, RecursiveMode::NonRecursive)
+            //     .expect("watch lib file");
 
             let signal_change = || {
                 if hash_file(&lib_file) == lib_file_hash.load(Ordering::Acquire)
@@ -231,19 +246,43 @@ impl LibReloader {
 
             loop {
                 match rx.recv() {
-                    Ok(Chmod(_) | Create(_) | Write(_)) => {
-                        signal_change();
+                    Err(_) => {
+                        log::info!("file watcher channel closed");
+                        break;
                     }
-                    Ok(Remove(_)) => {
+                    Ok(events) => {
+                        let events = match events {
+                            Err(errors) => {
+                                log::error!("{} file watcher error!", errors.len());
+                                for err in errors {
+                                    log::error!("  {err}");
+                                }
+                                continue;
+                            }
+                            Ok(events) => events,
+                        };
+
+                        log::trace!("file change events: {events:?}");
+                        let was_removed =
+                            events
+                                .iter()
+                                .fold(false, |was_removed, event| match event.kind {
+                                    notify::EventKind::Create(_) | notify::EventKind::Modify(_) => {
+                                        false
+                                    }
+                                    notify::EventKind::Remove(_) => true,
+                                    _ => was_removed,
+                                });
                         // just one hard link removed?
-                        if !lib_file.exists() {
+                        if was_removed || !lib_file.exists() {
                             log::debug!(
                                 "{} was removed, trying to watch it again...",
                                 lib_file.display()
                             );
                         }
                         loop {
-                            if watcher
+                            if debouncer
+                                .watcher()
                                 .watch(&lib_file, RecursiveMode::NonRecursive)
                                 .is_ok()
                             {
@@ -253,13 +292,6 @@ impl LibReloader {
                             }
                             thread::sleep(Duration::from_millis(500));
                         }
-                    }
-                    Ok(change) => {
-                        log::trace!("file change event: {change:?}");
-                    }
-                    Err(err) => {
-                        log::error!("file watcher error, stopping reload loop: {err}");
-                        break;
                     }
                 }
             }
@@ -307,7 +339,7 @@ fn watched_and_loaded_library_paths(
     lib_dir: impl AsRef<Path>,
     lib_name: impl AsRef<str>,
     load_counter: usize,
-    loaded_lib_name_template: &Option<impl AsRef<str>>
+    loaded_lib_name_template: &Option<impl AsRef<str>>,
 ) -> (PathBuf, PathBuf) {
     let lib_dir = &lib_dir.as_ref();
 
@@ -324,25 +356,23 @@ fn watched_and_loaded_library_paths(
 
     let loaded_lib_filename = match loaded_lib_name_template {
         Some(loaded_lib_name_template) => {
-            let mut result = loaded_lib_name_template.as_ref()
+            let result = loaded_lib_name_template
+                .as_ref()
                 .replace("{lib_name}", &lib_name)
                 .replace("{load_counter}", &load_counter.to_string())
                 .replace("{pid}", &std::process::id().to_string());
-            #[cfg(feature = "rand")]
-            {
-                result = result.replace("{rand}", &rand::random::<u32>().to_string());
-            }
             #[cfg(feature = "uuid")]
             {
-                result = result.replace("{uuid}", &uuid::Uuid::new_v4().to_string());
+                result.replace("{uuid}", &uuid::Uuid::new_v4().to_string())
             }
-            result
+            #[cfg(not(feature = "uuid"))]
+            {
+                result
+            }
         }
-        None => format!("{lib_name}-hot-{load_counter}")
+        None => format!("{lib_name}-hot-{load_counter}"),
     };
-    let loaded_lib_file = lib_dir
-        .join(loaded_lib_filename)
-        .with_extension(ext);
+    let loaded_lib_file = lib_dir.join(loaded_lib_filename).with_extension(ext);
     (watched_lib_file, loaded_lib_file)
 }
 
