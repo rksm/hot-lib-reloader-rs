@@ -5,12 +5,12 @@ use components::*;
 use rand::{thread_rng, Rng};
 
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
 
     // player
     let ship_handle = asset_server.load("textures/simplespace/ship_C.png");
     commands
-        .spawn_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             texture: ship_handle,
             ..default()
         })
@@ -74,10 +74,10 @@ pub fn player_shooting_system(
     if keyboard_input.just_pressed(KeyCode::Space) {
         if let Ok(tfm) = query.get_single() {
             commands
-                .spawn_bundle(SpriteBundle {
+                .spawn(SpriteBundle {
                     transform: *tfm,
                     sprite: Sprite {
-                        color: Color::rgb(0.9, 0.8, 0.0),
+                        color: Color::rgb(0.9, 0.0, 0.0),
                         custom_size: Some(Vec2::new(SIZE, SIZE)),
                         ..Default::default()
                     },
@@ -186,7 +186,7 @@ pub fn spawn_other_ships(
         transform.rotate_z(dir.to_radians());
 
         commands
-            .spawn_bundle(SpriteBundle {
+            .spawn(SpriteBundle {
                 texture: asset_server.load("textures/simplespace/enemy_A.png"),
                 transform,
                 ..default()

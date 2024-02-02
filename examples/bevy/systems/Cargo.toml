@@ -7,11 +7,12 @@ edition = "2021"
 crate-type = ["rlib", "dylib"]
 
 [dependencies]
-bevy = { version = "0.8.0" }
+bevy = { version = "0.12.1" }
+bevy_dylib = "0.12.1"
 components = { path = "../components" }
 log = "*"
 rand = "0.8.5"
 
 [features]
 default = []
-dynamic = ["bevy/dynamic", "components/dynamic"]
+dynamic = ["bevy/dynamic_linking", "components/dynamic"]
