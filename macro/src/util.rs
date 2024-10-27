@@ -50,13 +50,49 @@ pub fn read_functions_from_file(
                 // we can optionally assume that the function will be unmangled
                 // by other means than a direct attribute
                 if !ignore_no_mangle {
-                    let no_mangle = fun
-                        .attrs
-                        .iter()
-                        .filter_map(|attr| attr.path.get_ident())
-                        .any(|ident| *ident == "no_mangle");
+                    fn cfg_no_mangle<'a>(
+                        mut cfg_items: impl Iterator<Item = &'a syn::NestedMeta>,
+                    ) -> bool {
+                        let _predicate = cfg_items.next();
+                        // TODO: return false if predicate is false
+                        // false positives are unlikely, but can still compile error
 
-                    if !no_mangle {
+                        cfg_items.any(|meta| {
+                            let meta = match meta {
+                                syn::NestedMeta::Meta(m) => m,
+                                _ => return false,
+                            };
+                            match meta {
+                                syn::Meta::Path(path) => path.is_ident("no_mangle"),
+                                syn::Meta::List(m) => cfg_no_mangle(m.nested.iter()),
+                                _ => false,
+                            }
+                        })
+                    }
+
+                    fn is_no_mangle<'a>(
+                        mut attrs: impl Iterator<Item = &'a syn::Attribute>,
+                    ) -> bool {
+                        attrs.any(|attr| {
+                            let ident = match attr.path.get_ident() {
+                                Some(i) => i,
+                                None => return false,
+                            };
+                            if *ident == "no_mangle" {
+                                true
+                            } else if *ident == "cfg_attr" {
+                                let nested = match attr.parse_meta() {
+                                    Ok(syn::Meta::List(m)) => m.nested,
+                                    _ => return false,
+                                };
+                                cfg_no_mangle(nested.iter())
+                            } else {
+                                false
+                            }
+                        })
+                    }
+
+                    if !is_no_mangle(fun.attrs.iter()) {
                         continue;
                     };
                 }
