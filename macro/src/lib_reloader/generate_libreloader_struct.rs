@@ -1,8 +1,5 @@
 use proc_macro2::{Span, TokenStream};
-use syn::{
-    parse_quote, token, FnArg, ForeignItemFn, Ident, ImplItemMethod, LitByteStr, LitStr, Receiver,
-    Result, VisPublic, Visibility,
-};
+use syn::{parse_quote, token, FnArg, ForeignItemFn, Ident, ImplItem, ImplItemFn, LitByteStr, LitStr, Receiver, Result, Type, Visibility};
 
 use crate::util::ident_from_pat;
 
@@ -49,10 +46,10 @@ pub fn generate_lib_reloader_struct(
 /// 2. It generates a function signature that can be used as signature of a
 /// method for the specific LibReloader struct.
 ///
-/// Those two things are then put together to create a [syn::ImplItemMethod].
+/// Those two things are then put together to create a [syn::ImplItemFn].
 fn generate_impl_method_to_call_lib_function(
     (lib_function, span): (ForeignItemFn, Span),
-) -> Result<ImplItemMethod> {
+) -> Result<ImplItemFn> {
     let ForeignItemFn { attrs, sig, .. } = lib_function;
 
     // the symbol inside the library we call needs to be a byte string
@@ -104,15 +101,15 @@ fn generate_impl_method_to_call_lib_function(
             attrs: Vec::new(),
             mutability: None,
             self_token: token::SelfValue(Span::call_site()),
+            colon_token: None,
             reference: Some((token::And(Span::call_site()), None)),
+            ty: Box::new(Type::Verbatim(TokenStream::new())),
         }),
     );
 
-    Ok(ImplItemMethod {
+    Ok(ImplItemFn  {
         attrs,
-        vis: Visibility::Public(VisPublic {
-            pub_token: token::Pub(Span::call_site()),
-        }),
+        vis: Visibility::Public(token::Pub(Span::call_site())),
         defaultness: None,
         sig,
         block,
