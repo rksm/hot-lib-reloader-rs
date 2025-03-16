@@ -57,15 +57,11 @@ pub fn read_functions_from_file(
                         // TODO: return false if predicate is false
                         // false positives are unlikely, but can still compile error
                         cfg_items.any(|meta| match meta {
-                            syn::Meta::Path(path) => {
-                                path.is_ident("no_mangle")
-                            },
+                            syn::Meta::Path(path) => path.is_ident("no_mangle"),
                             syn::Meta::List(list) => {
                                 let mut found_no_mangle = false;
                                 if let Err(_) = list.parse_nested_meta(|meta| {
-                                    println!("meta.path: {:?}", meta.path);
                                     if meta.path.is_ident("no_mangle") {
-                                        println!("no_mangle");
                                         found_no_mangle = true;
                                     }
                                     Ok(())
@@ -90,7 +86,6 @@ pub fn read_functions_from_file(
                             if *ident == "no_mangle" {
                                 true
                             } else if *ident == "unsafe" {
-                                println!("found unsafe");
                                 let mut found_no_mangle = false;
                                 if let Err(_) = attr.parse_nested_meta(|meta| {
                                     if meta.path.is_ident("no_mangle") {
@@ -102,7 +97,6 @@ pub fn read_functions_from_file(
                                 }
                                 found_no_mangle
                             } else if *ident == "cfg_attr" {
-                                println!("found cfg_attr");
                                 let nested = match attr.parse_args_with(syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated) {
                                     Ok(nested) => nested,
                                     _ => return false,

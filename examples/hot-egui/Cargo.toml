@@ -10,10 +10,8 @@ edition = "2021"
 
 [dependencies]
 eframe = "0.19.0"
-#hot-lib-reloader = { version = "0.7.0", optional = true }
+hot-lib-reloader = { path = "./../../", optional = true }
 lib = { path = "./lib" }
-
-hot-lib-reloader = { path = "C:\\dev\\hot-lib-reloader-rs", optional = true}
 
 [features]
 default = []
