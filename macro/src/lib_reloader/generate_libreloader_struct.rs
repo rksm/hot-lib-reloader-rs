@@ -1,7 +1,7 @@
 use proc_macro2::{Span, TokenStream};
 use syn::{
-    parse_quote, token, FnArg, ForeignItemFn, Ident, ImplItemMethod, LitByteStr, LitStr, Receiver,
-    Result, VisPublic, Visibility,
+    parse_quote, token, FnArg, ForeignItemFn, Ident, ImplItemFn, LitByteStr, LitStr, Receiver,
+    Result, Visibility,
 };
 
 use crate::util::ident_from_pat;
@@ -52,7 +52,7 @@ pub fn generate_lib_reloader_struct(
 /// Those two things are then put together to create a [syn::ImplItemMethod].
 fn generate_impl_method_to_call_lib_function(
     (lib_function, span): (ForeignItemFn, Span),
-) -> Result<ImplItemMethod> {
+) -> Result<ImplItemFn> {
     let ForeignItemFn { attrs, sig, .. } = lib_function;
 
     // the symbol inside the library we call needs to be a byte string
@@ -105,14 +105,14 @@ fn generate_impl_method_to_call_lib_function(
             mutability: None,
             self_token: token::SelfValue(Span::call_site()),
             reference: Some((token::And(Span::call_site()), None)),
+            colon_token: None,
+            ty: Box::new(parse_quote!(&Self)),
         }),
     );
 
-    Ok(ImplItemMethod {
+    Ok(ImplItemFn {
         attrs,
-        vis: Visibility::Public(VisPublic {
-            pub_token: token::Pub(Span::call_site()),
-        }),
+        vis: Visibility::Public(token::Pub(Span::call_site())),
         defaultness: None,
         sig,
         block,

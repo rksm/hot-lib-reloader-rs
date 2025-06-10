@@ -1,5 +1,5 @@
 use proc_macro2::Span;
-use syn::{token, Expr, Path, FnArg, ItemFn, LitByteStr, LitStr, Result, VisPublic, Visibility};
+use syn::{token, Expr, FnArg, ItemFn, LitByteStr, LitStr, Path, Result, Visibility};
 use syn::{ForeignItemFn, LitInt};
 
 use crate::util::ident_from_pat;
@@ -172,9 +172,7 @@ pub(crate) fn gen_hot_module_function_for(
     // function using message sending
     let function = ItemFn {
         attrs: Vec::new(),
-        vis: Visibility::Public(VisPublic {
-            pub_token: token::Pub(Span::call_site()),
-        }),
+        vis: Visibility::Public(token::Pub(Span::call_site())),
         sig,
         block,
     };

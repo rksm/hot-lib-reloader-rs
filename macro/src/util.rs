@@ -53,7 +53,7 @@ pub fn read_functions_from_file(
                     let no_mangle = fun
                         .attrs
                         .iter()
-                        .filter_map(|attr| attr.path.get_ident())
+                        .filter_map(|attr| attr.path().get_ident())
                         .any(|ident| *ident == "no_mangle");
 
                     if !no_mangle {

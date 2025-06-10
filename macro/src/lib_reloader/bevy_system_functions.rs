@@ -44,9 +44,7 @@ pub(crate) fn generate_bevy_system_functions(
 
         let bevy_system_func = syn::ItemFn {
             attrs: Vec::new(),
-            vis: syn::Visibility::Public(syn::VisPublic {
-                pub_token: syn::token::Pub(*span),
-            }),
+            vis: syn::Visibility::Public(syn::token::Pub(*span)),
             sig,
             block,
         };
