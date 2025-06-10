@@ -36,10 +36,15 @@ fn test() {
     common::modify_file_and_do(
         "tests/lib_for_testing/src/lib.rs",
         |content| {
-            content.replace(
-                "pub fn do_stuff() -> i32 { 3 }",
-                "pub fn do_stuff() -> i32 { 5 }",
-            )
+            content
+                .replace(
+                    "pub fn do_stuff() -> i32 { 3 }",
+                    "pub fn do_stuff() -> i32 { 5 }",
+                )
+                .replace(
+                    "pub fn do_even_more_stuff() -> i32 { 3 }",
+                    "pub fn do_even_more_stuff() -> i32 { 5 }",
+                )
         },
         || {
             let lib_observer = hot_lib::subscribe();
