@@ -241,9 +241,15 @@ impl quote::ToTokens for HotModule {
             Some(attributes) => attributes,
         };
 
-        let lib_loader =
-            generate_lib_loader_items(lib_dir, lib_name, file_watch_debounce_ms, crate_name, loaded_lib_name_template, tokens.span())
-                .expect("error generating hot lib loader helpers");
+        let lib_loader = generate_lib_loader_items(
+            lib_dir,
+            lib_name,
+            file_watch_debounce_ms,
+            crate_name,
+            loaded_lib_name_template,
+            tokens.span(),
+        )
+        .expect("error generating hot lib loader helpers");
 
         let module_def = quote::quote! {
             #vis mod #ident {
