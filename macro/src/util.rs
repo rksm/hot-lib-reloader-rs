@@ -50,13 +50,65 @@ pub fn read_functions_from_file(
                 // we can optionally assume that the function will be unmangled
                 // by other means than a direct attribute
                 if !ignore_no_mangle {
-                    let no_mangle = fun
-                        .attrs
-                        .iter()
-                        .filter_map(|attr| attr.path.get_ident())
-                        .any(|ident| *ident == "no_mangle");
+                    fn cfg_no_mangle<'a>(
+                        mut cfg_items: impl Iterator<Item = &'a syn::Meta>,
+                    ) -> bool {
+                        let _predicate = cfg_items.next();
+                        // TODO: return false if predicate is false
+                        // false positives are unlikely, but can still compile error
+                        cfg_items.any(|meta| match meta {
+                            syn::Meta::Path(path) => path.is_ident("no_mangle"),
+                            syn::Meta::List(list) => {
+                                let mut found_no_mangle = false;
+                                if let Err(_) = list.parse_nested_meta(|meta| {
+                                    if meta.path.is_ident("no_mangle") {
+                                        found_no_mangle = true;
+                                    }
+                                    Ok(())
+                                }) {
+                                    return false;
+                                }
+                                found_no_mangle
+                            }
 
-                    if !no_mangle {
+                            _ => false,
+                        })
+                    }
+
+                    fn is_no_mangle<'a>(
+                        mut attrs: impl Iterator<Item = &'a syn::Attribute>,
+                    ) -> bool {
+                        attrs.any(|attr| {
+                            let ident = match attr.path().get_ident() {
+                                Some(i) => i,
+                                None => return false,
+                            };
+                            if *ident == "no_mangle" {
+                                true
+                            } else if *ident == "unsafe" {
+                                let mut found_no_mangle = false;
+                                if let Err(_) = attr.parse_nested_meta(|meta| {
+                                    if meta.path.is_ident("no_mangle") {
+                                        found_no_mangle = true;
+                                    }
+                                    Ok(())
+                                }) {
+                                    return false;
+                                }
+                                found_no_mangle
+                            } else if *ident == "cfg_attr" {
+                                let nested = match attr.parse_args_with(syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated) {
+                                    Ok(nested) => nested,
+                                    _ => return false,
+                                };
+                                cfg_no_mangle(nested.iter())
+                            } else {
+                                false
+                            }
+                        })
+                    }
+
+                    if !is_no_mangle(fun.attrs.iter()) {
                         continue;
                     };
                 }

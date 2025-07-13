@@ -14,7 +14,7 @@ impl Default for State {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn render(state: &mut State, ctx: &egui::Context, _frame: &mut eframe::Frame) {
     egui::CentralPanel::default().show(ctx, |ui| {
         // ctx.set_pixels_per_point(2.0);

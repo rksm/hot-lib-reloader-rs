@@ -105,7 +105,7 @@ impl syn::parse::Parse for HotModule {
                     if func
                         .attrs
                         .iter()
-                        .any(|attr| attr.path.is_ident("lib_change_subscription")) =>
+                        .any(|attr| attr.path().is_ident("lib_change_subscription")) =>
                 {
                     let span = func.span();
                     let f = ForeignItemFn {
@@ -125,7 +125,7 @@ impl syn::parse::Parse for HotModule {
                     if func
                         .attrs
                         .iter()
-                        .any(|attr| attr.path.is_ident("lib_version")) =>
+                        .any(|attr| attr.path().is_ident("lib_version")) =>
                 {
                     let span = func.span();
                     let f = ForeignItemFn {
@@ -145,7 +145,7 @@ impl syn::parse::Parse for HotModule {
                     if func
                         .attrs
                         .iter()
-                        .any(|attr| attr.path.is_ident("lib_updated")) =>
+                        .any(|attr| attr.path().is_ident("lib_updated")) =>
                 {
                     let span = func.span();
                     let f = ForeignItemFn {
@@ -165,7 +165,7 @@ impl syn::parse::Parse for HotModule {
                     if func
                         .attrs
                         .iter()
-                        .any(|attr| attr.path.is_ident("hot_function")) =>
+                        .any(|attr| attr.path().is_ident("hot_function")) =>
                 {
                     let span = func.span();
                     let f = ForeignItemFn {
@@ -187,7 +187,7 @@ impl syn::parse::Parse for HotModule {
                     if foreign_mod
                         .attrs
                         .iter()
-                        .any(|attr| attr.path.is_ident("hot_functions")) =>
+                        .any(|attr| attr.path().is_ident("hot_functions")) =>
                 {
                     for item in foreign_mod.items {
                         match item {
@@ -241,9 +241,15 @@ impl quote::ToTokens for HotModule {
             Some(attributes) => attributes,
         };
 
-        let lib_loader =
-            generate_lib_loader_items(lib_dir, lib_name, file_watch_debounce_ms, crate_name, loaded_lib_name_template, tokens.span())
-                .expect("error generating hot lib loader helpers");
+        let lib_loader = generate_lib_loader_items(
+            lib_dir,
+            lib_name,
+            file_watch_debounce_ms,
+            crate_name,
+            loaded_lib_name_template,
+            tokens.span(),
+        )
+        .expect("error generating hot lib loader helpers");
 
         let module_def = quote::quote! {
             #vis mod #ident {
