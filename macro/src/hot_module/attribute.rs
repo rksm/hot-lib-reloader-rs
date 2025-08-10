@@ -111,7 +111,9 @@ impl syn::parse::Parse for HotModuleAttribute {
 
         let loaded_lib_name_template = match loaded_lib_name_template {
             None => syn::parse_quote! { Option::None },
-            Some(loaded_lib_name_template) => syn::parse_quote! { Some(#loaded_lib_name_template.to_string()) },
+            Some(loaded_lib_name_template) => {
+                syn::parse_quote! { Some(#loaded_lib_name_template.to_string()) }
+            }
         };
 
         Ok(HotModuleAttribute {

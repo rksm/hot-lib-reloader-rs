@@ -20,11 +20,13 @@
           buildInputs = with pkgs; [
             openssl
             clang
-          ] ++ (if pkgs.stdenv.isDarwin then [ libiconv ] else [ ]);
+          ];
 
           packages = with pkgs; [
+            just
             rust-analyzer
             (rustfmt.override { asNightly = true; })
+            cargo-nextest
           ];
 
           RUST_BACKTRACE = "1";
