@@ -9,3 +9,4 @@ DEV.org
 /examples/input-files/
 .DS_Store
 /scratch.el
+/.direnv/
