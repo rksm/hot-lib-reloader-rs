@@ -307,7 +307,7 @@ impl LibReloader {
     /// # Safety
     ///
     /// Users of this API must specify the correct type of the function or variable loaded.
-    pub unsafe fn get_symbol<T>(&self, name: &[u8]) -> Result<Symbol<T>, HotReloaderError> {
+    pub unsafe fn get_symbol<T>(&self, name: &[u8]) -> Result<Symbol<'_, T>, HotReloaderError> {
         match &self.lib {
             None => Err(HotReloaderError::LibraryNotLoaded),
             Some(lib) => Ok(lib.get(name)?),

@@ -2,7 +2,7 @@ default:
     just --list
 
 test:
-    cargo nextest run
+    cargo nextest run --workspace --all-features
     cargo test --doc
 
 lint:
