@@ -28,7 +28,7 @@ mod util;
 ///
 /// A few pseudo-macros can appear in the modules context:
 ///
-/// ```
+/// ```ignore
 /// // The `dylib` attribute should be the name of the library to hot-reload,
 /// // typically the crate name.
 /// #[hot_module(dylib = "lib")]

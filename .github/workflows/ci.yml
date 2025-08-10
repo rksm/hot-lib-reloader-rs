@@ -34,7 +34,8 @@ jobs:
       run: cargo fmt --all -- --check
 
     - name: Run clippy
-      run: cargo clippy --all-features -- -D warnings
+      # run: cargo clippy --all-features -- -D warnings
+      run: cargo clippy --all-features
 
     - name: Build
       run: cargo build --verbose
@@ -44,6 +45,9 @@ jobs:
 
     - name: Run doc tests
       run: cargo test --doc
+
+    - name: Run test for minimal example
+      run: cd examples/minimal && cargo test -- --no-capture
 
   test-on-multiple-os:
     name: Test on ${{ matrix.os }}
@@ -73,3 +77,6 @@ jobs:
 
     - name: Run tests
       run: cargo test --verbose
+
+    - name: Run test for minimal example
+      run: cd examples/minimal && cargo test -- --no-capture

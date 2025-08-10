@@ -37,10 +37,12 @@
 
           packages = with pkgs; [
             just
+            parallel
             rust-analyzer
             (rustfmt.override { asNightly = true; })
             cargo-nextest
             cargo-machete
+            cargo-watch
           ];
 
           RUST_BACKTRACE = "1";
