@@ -19,8 +19,8 @@ pub fn ident_from_pat(
 /// Reads the contents of a Rust source file and finds the top-level functions that have
 /// - visibility public
 /// - #[no_mangle] attribute
-/// It converts these functions into a [syn::ForeignItemFn] so that those can
-/// serve as lib function declarations of the lib reloader.
+///   It converts these functions into a [syn::ForeignItemFn] so that those can
+///   serve as lib function declarations of the lib reloader.
 pub fn read_functions_from_file(
     file_name: LitStr,
     ignore_no_mangle: bool,

@@ -54,7 +54,7 @@ impl syn::parse::Parse for HotModuleAttribute {
                     }
 
                     expr if expr_is_ident(&left, "crate") => {
-                        let span = expr.span().clone();
+                        let span = expr.span();
                         let s = match match expr {
                             syn::Expr::Lit(syn::ExprLit { lit, .. }) => lit,
                             _ => return Err(Error::new(left.span(), "unexpected expression type")),

@@ -12,9 +12,6 @@ use std::time::Duration;
 
 use crate::error::HotReloaderError;
 
-#[cfg(feature = "verbose")]
-use log;
-
 /// Manages watches a library (dylib) file, loads it using
 /// [`libloading::Library`] and [provides access to its
 /// symbols](LibReloader::get_symbol). When the library changes, [`LibReloader`]
@@ -321,7 +318,7 @@ impl LibReloader {
     /// crate around
     #[doc(hidden)]
     pub fn log_info(what: impl std::fmt::Display) {
-        log::info!("{}", what);
+        log::info!("{what}");
     }
 }
 
