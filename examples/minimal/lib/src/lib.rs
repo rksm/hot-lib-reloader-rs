@@ -5,5 +5,5 @@ pub struct State {
 #[no_mangle]
 pub fn do_stuff(state: &mut State) {
     state.counter += 1;
-    println!("doing more stuff in iteration {}", state.counter);
+    println!("doing stuff in iteration {}", state.counter);
 }

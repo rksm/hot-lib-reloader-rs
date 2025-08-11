@@ -43,8 +43,7 @@ impl Thing {
             pos: pt2(
                 random_range(bounds.left(), bounds.right()),
                 random_range(bounds.bottom(), bounds.top()),
-            )
-            .into(),
+            ),
             color: rgb(random_f32(), random_f32(), random_f32()),
             width: random_range(1.0, 10.0),
             age: 1,
