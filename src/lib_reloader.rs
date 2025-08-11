@@ -4,8 +4,9 @@ use notify_debouncer_full::new_debouncer;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{
+    Arc, Mutex,
     atomic::{AtomicBool, AtomicU32, Ordering},
-    mpsc, Arc, Mutex,
+    mpsc,
 };
 use std::thread;
 use std::time::Duration;
@@ -308,9 +309,11 @@ impl LibReloader {
     ///
     /// Users of this API must specify the correct type of the function or variable loaded.
     pub unsafe fn get_symbol<T>(&self, name: &[u8]) -> Result<Symbol<'_, T>, HotReloaderError> {
-        match &self.lib {
-            None => Err(HotReloaderError::LibraryNotLoaded),
-            Some(lib) => Ok(lib.get(name)?),
+        unsafe {
+            match &self.lib {
+                None => Err(HotReloaderError::LibraryNotLoaded),
+                Some(lib) => Ok(lib.get(name)?),
+            }
         }
     }
 
@@ -380,16 +383,17 @@ fn find_file_or_dir_in_parent_directories(
     file: impl AsRef<Path>,
 ) -> Result<PathBuf, HotReloaderError> {
     let mut file = file.as_ref().to_path_buf();
-    if !file.exists() && file.is_relative() {
-        if let Ok(cwd) = std::env::current_dir() {
-            let mut parent_dir = Some(cwd.as_path());
-            while let Some(dir) = parent_dir {
-                if dir.join(&file).exists() {
-                    file = dir.join(&file);
-                    break;
-                }
-                parent_dir = dir.parent();
+    if !file.exists()
+        && file.is_relative()
+        && let Ok(cwd) = std::env::current_dir()
+    {
+        let mut parent_dir = Some(cwd.as_path());
+        while let Some(dir) = parent_dir {
+            if dir.join(&file).exists() {
+                file = dir.join(&file);
+                break;
             }
+            parent_dir = dir.parent();
         }
     }
 

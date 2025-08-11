@@ -44,9 +44,11 @@ fn main() {
             #[cfg(feature = "reload")]
             {
                 let ctx = cc.egui_ctx.clone();
-                std::thread::spawn(move || loop {
-                    hot_lib::subscribe().wait_for_reload();
-                    ctx.request_repaint();
+                std::thread::spawn(move || {
+                    loop {
+                        hot_lib::subscribe().wait_for_reload();
+                        ctx.request_repaint();
+                    }
                 });
             }
             Box::new(MyApp::default())

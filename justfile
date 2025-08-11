@@ -14,6 +14,12 @@ lint dir=".":
       cargo clippy --all-features -- -D warnings
 
 fmt dir=".":
+    for dir in $(scripts/rust-crates.py list-workspaces); do \
+        just fmt-dir $dir; \
+    done
+
+[private]
+fmt-dir dir=".":
     cd {{ dir }} && \
       cargo fmt --all
 

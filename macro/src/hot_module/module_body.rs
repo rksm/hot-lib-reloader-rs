@@ -1,14 +1,14 @@
 use quote::ToTokens;
 use syn::LitBool;
 use syn::{
-    spanned::Spanned, token, Attribute, ForeignItemFn, Ident, Item, ItemMacro, LitStr, Macro,
-    Result, Visibility,
+    Attribute, ForeignItemFn, Ident, Item, ItemMacro, LitStr, Macro, Result, Visibility,
+    spanned::Spanned, token,
 };
 
+use super::HotModuleAttribute;
 use super::code_gen::{
     gen_hot_module_function_for, gen_lib_change_subscription_function, generate_lib_loader_items,
 };
-use super::HotModuleAttribute;
 use crate::hot_module::code_gen::{gen_lib_version_function, gen_lib_was_updated_function};
 use crate::util::read_functions_from_file;
 

@@ -22,6 +22,8 @@
           extensions = [ "rust-analyzer" "rust-src" "clippy" ];
         };
 
+        nightly-rust-toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain-nightly.toml;
+
         defaultAttrs = {
           nativeBuildInputs = with pkgs; [
             rust-toolchain
@@ -42,6 +44,7 @@
             cargo-machete
             cargo-watch
             cargo-rdme
+            cargo-expand
           ];
 
           RUST_BACKTRACE = "1";
@@ -51,14 +54,19 @@
         default = pkgs.mkShell defaultAttrs;
 
         # for bevy / egui / iced / nannou
-        gui = pkgs.mkShell (defaultAttrs // rec {
-          inputsFrom = [ default ];
+        gui = pkgs.mkShell rec {
+          inherit (defaultAttrs) packages;
 
           nativeBuildInputs = with pkgs; [
+            nightly-rust-toolchain
+            pkg-config
             cmake
           ];
 
           buildInputs = with pkgs; [
+            openssl
+            clang
+
             alsa-lib
             expat
             fontconfig
@@ -74,7 +82,7 @@
             xorg.libXrandr # To use the x11 feature
           ];
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
-        });
+        };
 
       in
       {

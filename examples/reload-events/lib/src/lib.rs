@@ -15,7 +15,7 @@ impl State {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn do_stuff(state: &mut State) {
     state.counter += 1;
     println!("doing stuff in iteration {}", state.counter);

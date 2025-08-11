@@ -61,7 +61,7 @@ just fmt-check
 The `#[hot_module]` macro requires:
 - `dylib` parameter specifying the library name
 - `hot_functions_from_file!()` to import functions
-- Functions must be `#[no_mangle]` and public in the library
+- Functions must be `#[unsafe(no_mangle)]` and public in the library
 
 ### Platform-Specific Considerations
 - **macOS**: Requires codesigning via XCode command line tools

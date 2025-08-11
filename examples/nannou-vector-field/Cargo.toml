@@ -6,7 +6,7 @@ members = ["lib", "nannou_dynamic"]
 name = "nannou-vector-field"
 authors = ["Robert Krahn <robert.krahn@gmail.com>"]
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 hot-lib-reloader = { path = "../..", optional = true }

@@ -1,5 +1,5 @@
 use syn::{
-    punctuated::Punctuated, spanned::Spanned, token, Error, ExprAssign, Ident, LitInt, Result,
+    Error, ExprAssign, Ident, LitInt, Result, punctuated::Punctuated, spanned::Spanned, token,
 };
 
 pub(crate) struct HotModuleAttribute {
@@ -83,7 +83,7 @@ impl syn::parse::Parse for HotModuleAttribute {
                 return Err(Error::new(
                     stream.span(),
                     r#"missing field "name": add `name = "name_of_library""#,
-                ))
+                ));
             }
             Some(lib_name) => lib_name,
         };

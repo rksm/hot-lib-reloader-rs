@@ -65,10 +65,10 @@ pub struct State {
     mouse_pos: Option<Vec2>,
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn event(app: &App, model: &mut Model, event: WindowEvent) {}
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn update(app: &App, model: &mut Model, update: Update) {
     let bounds = app.window_rect();
 
@@ -123,7 +123,7 @@ pub fn update(app: &App, model: &mut Model, update: Update) {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn view(app: &App, model: &Model, frame: Frame) {
     if !model.state.needs_draw {
         return;

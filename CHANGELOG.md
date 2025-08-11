@@ -120,7 +120,7 @@ being used (b/c the prev solution wasn't really thread safe).
 
 ## [0.5.4]
 ### `#[no-mangle-if-debug]`
-Also add a [no-mangle-if-debug crate](https://github.com/rksm/hot-lib-reloader-rs/tree/master/macro-no-mangle-if-debug) that allows to `#[no_mangle]` functions but only in debug mode. The use of this is optional and nothing about hot-lib-reloader itself changes. This addresses https://github.com/rksm/hot-lib-reloader-rs/issues/10.
+Also add a [no-mangle-if-debug crate](https://github.com/rksm/hot-lib-reloader-rs/tree/master/macro-no-mangle-if-debug) that allows to `#[unsafe(no_mangle)]` functions but only in debug mode. The use of this is optional and nothing about hot-lib-reloader itself changes. This addresses https://github.com/rksm/hot-lib-reloader-rs/issues/10.
 
 
 ## [0.5.3]

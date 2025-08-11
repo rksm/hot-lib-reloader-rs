@@ -88,10 +88,10 @@ members = ["lib"]
 [package]
 name = "bin"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-hot-lib-reloader = "^0.6"
+hot-lib-reloader = "0.8"
 lib = { path = "lib" }
 ```
 
@@ -132,20 +132,20 @@ The library should expose functions. It should set the crate type `dylib` in `./
 [package]
 name = "lib"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [lib]
 crate-type = ["rlib", "dylib"]
 ```
 
-The functions you want to be reloadable should be public and have the `#[no_mangle]` attribute. Note that you can define other function that are not supposed to change without `no_mangle` and you will be able to use those alongside the other functions.
+The functions you want to be reloadable should be public and have the `#[unsafe(no_mangle)]` attribute. Note that you can define other function that are not supposed to change without `no_mangle` and you will be able to use those alongside the other functions.
 
 ```rust
 pub struct State {
     pub counter: usize,
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn step(state: &mut State) {
     state.counter += 1;
     println!("doing stuff in iteration {}", state.counter);
@@ -256,7 +256,7 @@ See [use serialization](#use-serialization-or-generic-values-for-changing-types)
 
 #### Hot-reloadable functions cannot be generic
 
-Since `#[no_mangle]` does not support generics, generic functions can't be named / found in the library.
+Since `#[unsafe(no_mangle)]` does not support generics, generic functions can't be named / found in the library.
 
 #### Global state in reloadable code
 
@@ -299,7 +299,7 @@ To run the static version just use `cargo run` the hot reloadable variant with `
 
 ### Disable `#[no-mangle]` in release mode
 
-To not pay a penalty for exposing functions using `#[no_mangle]` in release mode where everything is statically compiled (see previous tip) and no functions need to be exported, you can use the [no-mangle-if-debug attribute macro](./macro-no-mangle-if-debug). It will conditionally disable name mangling, depending on wether you build release or debug mode.
+To not pay a penalty for exposing functions using `#[unsafe(no_mangle)]` in release mode where everything is statically compiled (see previous tip) and no functions need to be exported, you can use the [no-mangle-if-debug attribute macro](./macro-no-mangle-if-debug). It will conditionally disable name mangling, depending on wether you build release or debug mode.
 
 
 ### Use serialization or generic values for changing types
@@ -339,7 +339,7 @@ pub struct State {
 #[derive(serde::Deserialize, serde::Serialize)]
 struct InnerState {}
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn step(state: State) -> State {
     let inner: InnerState = serde_json::from_value(state.inner).unwrap_or(InnerState {});
 

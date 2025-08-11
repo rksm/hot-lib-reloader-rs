@@ -1,5 +1,5 @@
 use hot_lib::*;
-use iced::{executor, Application, Command, Element, Settings, Subscription, Theme};
+use iced::{Application, Command, Element, Settings, Subscription, Theme, executor};
 
 #[hot_lib_reloader::hot_module(dylib = "lib")]
 mod hot_lib {
