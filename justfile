@@ -64,6 +64,11 @@ update:
         popd; \
     done
 
+bump:
+    cargo workspaces version \
+      --allow-branch $(git rev-parse --abbrev-ref HEAD) \
+      --no-git-tag
+
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Release
 

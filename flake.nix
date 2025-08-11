@@ -45,6 +45,7 @@
             cargo-watch
             cargo-rdme
             cargo-expand
+            cargo-workspaces
           ];
 
           RUST_BACKTRACE = "1";

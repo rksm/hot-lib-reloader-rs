@@ -2,6 +2,10 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
+## [0.8.1]
+### Support for compile-time conditional no_mangle
+This adds support for compile-time conditional no_mangle via a #[cfg_attr(feature = "reload", unsafe(no_mangle))] annotation. Via https://github.com/rksm/hot-lib-reloader-rs/pull/50 and https://github.com/rksm/hot-lib-reloader-rs/pull/41. Thank you @SArpnt!
+
 ## [0.8.0]
 ### Dependency updates, Rust 2024 edition, project cleanup
 This is an update that breaks backwards compatibility. hot-lib-reloader now user syn 2.0 and supports the Rust 2024 edition, in particular `#[unsafe(no_mangle)]` (https://github.com/rksm/hot-lib-reloader-rs/issues/42).

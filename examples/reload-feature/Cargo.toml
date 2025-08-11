@@ -15,4 +15,4 @@ log = "*"
 
 [features]
 default = []
-reload = ["dep:hot-lib-reloader"]
+reload = ["lib/reload", "dep:hot-lib-reloader"]
