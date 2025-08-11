@@ -30,6 +30,14 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+    - name: cargo-binstall
+      uses: cargo-bins/cargo-binstall@main
+
+    - name: install cargo utilities
+      run: |
+        cargo binstall cargo-rdme
+        cargo binstall cargo-nextest
+
     - name: Check formatting
       run: cargo fmt --all -- --check
 
@@ -41,13 +49,16 @@ jobs:
       run: cargo build --verbose
 
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo nextest run --verbose
 
     - name: Run doc tests
       run: cargo test --doc
 
     - name: Run test for minimal example
-      run: cd examples/minimal && cargo test -- --no-capture
+      run: cd examples/minimal && cargo nexttest run --no-capture
+
+    - name: Readme check
+      run: cargo rdme --check
 
   test-on-multiple-os:
     name: Test on ${{ matrix.os }}
@@ -72,11 +83,19 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+    - name: cargo-binstall
+      uses: cargo-bins/cargo-binstall@main
+
+    - name: install cargo utilities
+      run: |
+        cargo binstall cargo-rdme
+        cargo binstall cargo-nextest
+
     - name: Build
       run: cargo build --verbose
 
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo nextest run --verbose
 
     - name: Run test for minimal example
-      run: cd examples/minimal && cargo test -- --no-capture
+      run: cd examples/minimal && cargo nextest run --no-capture

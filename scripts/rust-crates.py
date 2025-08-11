@@ -35,23 +35,27 @@ class RepositoryCrates:
             if is_workspace_cargo_toml(toml):
                 workspace_dirs.append(toml.parent)
 
+        # Sort workspace dirs by depth (deepest first) to find the closest parent
+        workspace_dirs.sort(key=lambda p: len(p.parts), reverse=True)
+
         # Get all crate directories (parent dirs of Cargo.toml files)
         crate_dirs = [toml.parent for toml in cargo_tomls]
 
         standalone_crates: list[Path] = []
-        workspace_crates: Mapping[Path, list[Path]] = {}
+        workspace_crates: dict[Path, list[Path]] = {}
 
         for crate_dir in crate_dirs:
             # Skip workspace roots themselves
             if crate_dir in workspace_dirs:
                 continue
 
-            # Check if this crate belongs to any workspace
+            # Find the closest parent workspace
             is_workspace_member = False
             for workspace_dir in workspace_dirs:
                 try:
                     crate_dir.relative_to(workspace_dir)
-                    # If we can get a relative path, it's inside the workspace
+                    # If we can get a relative path, it's inside this workspace
+                    # This is the closest parent due to our sorting
                     if workspace_dir not in workspace_crates:
                         workspace_crates[workspace_dir] = []
                     workspace_crates[workspace_dir].append(crate_dir)
@@ -64,7 +68,7 @@ class RepositoryCrates:
             if not is_workspace_member:
                 standalone_crates.append(crate_dir)
 
-        self.workspace_dirs = workspace_dirs
+        self.workspace_dirs = sorted(workspace_dirs, key=lambda p: str(p))
         self.standalone_crates = standalone_crates
         self.workspace_crates = workspace_crates
 

@@ -1,10 +1,11 @@
 # hot-lib-reloader
 
-
 [![Crates.io](https://img.shields.io/crates/v/hot-lib-reloader)](https://crates.io/crates/hot-lib-reloader)
 [![](https://docs.rs/hot-lib-reloader/badge.svg)](https://docs.rs/hot-lib-reloader)
 [![CI](https://github.com/rksm/hot-lib-reloader-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/rksm/hot-lib-reloader-rs/actions/workflows/ci.yml)
 [![License](https://img.shields.io/crates/l/hot-lib-reloader?color=informational&logo=mit)](/LICENSE.md)
+
+<!-- cargo-rdme start -->
 
 ![](doc/hot-reload-demo.gif)
 
@@ -159,7 +160,17 @@ pub fn step(state: &mut State) {
 Now change for example the print statement in `lib/lib.rs` and see the effect on the runtime.
 
 
-In addition, using a tool like [cargo runcc](https://crates.io/crates/runcc) is recommended. This allows to run both the lib build and the application in one go.
+In addition, using a tool like [gnu parallel](https://www.gnu.org/software/parallel/) or [concurrently](https://github.com/open-cli-tools/concurrently) is recommended. This allows to run both the lib build and the application in one go.
+
+Example:
+
+```bash
+# Forwards output, stops all on ctr-c, fails if one command fails
+parallel --line-buffer --halt now,fail=1 ::: \
+    "cargo watch -i lib -x run" \
+    "cargo watch -w lib -x 'build -p lib'"
+
+```
 
 
 
@@ -454,5 +465,4 @@ If you can, don't use `hot-lib-reloader` in combination with `tracing`.
 
 [MIT](https://github.com/rksm/hot-lib-reloader-rs/blob/hot-module/LICENSE)
 
-
-License: MIT
+<!-- cargo-rdme end -->

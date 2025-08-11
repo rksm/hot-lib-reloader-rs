@@ -43,6 +43,7 @@
             cargo-nextest
             cargo-machete
             cargo-watch
+            cargo-rdme
           ];
 
           RUST_BACKTRACE = "1";

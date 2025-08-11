@@ -5,3 +5,8 @@ run:
     parallel --line-buffer --halt now,fail=1 ::: \
       "cargo run --features reload" \
       "cargo watch -w systems -w components -x 'build -p systems --features dynamic'"
+
+run-windows:
+    parallel --line-buffer --halt now,fail=1 ::: \
+      "cargo run --features reload --target-dir 'target-bin'" \
+      "cargo watch -w systems -w components -x 'build -p systems --features dynamic'"

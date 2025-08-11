@@ -5,7 +5,7 @@ Hot-reload with [nannou](https://nannou.cc/).
 To run use
 
 ```shell
-cargo runcc -c
+just run
 ```
 
 or
