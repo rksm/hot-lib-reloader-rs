@@ -4,6 +4,7 @@ This package tries to adhere to [semver](https://semver.org/).
 
 ## [0.8.0] (unreleased)
 ### Dependency updates, Rust 2024 edition, project cleanup
+This is an update that breaks backwards compatibility. hot-lib-reloader now user syn 2.0 and supports the Rust 2024 edition, in particular `#[unsafe(no_mangle)]` (https://github.com/rksm/hot-lib-reloader-rs/issues/42).
 
 ## [0.7.0]
 ### Add: Adjust the library filename
