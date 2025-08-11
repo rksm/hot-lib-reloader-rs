@@ -22,9 +22,7 @@
           extensions = [ "rust-analyzer" "rust-src" "clippy" ];
         };
 
-      in
-      {
-        devShells.default = pkgs.mkShell {
+        defaultAttrs = {
           nativeBuildInputs = with pkgs; [
             rust-toolchain
             pkg-config
@@ -50,6 +48,51 @@
           RUST_LOG = "debug";
           LIBCLANG_PATH = pkgs.lib.makeLibraryPath [ pkgs.llvmPackages.libclang.lib ];
         };
+        default = pkgs.mkShell defaultAttrs;
+
+        bevy = pkgs.mkShell (defaultAttrs // {
+          inputsFrom = [ default ];
+
+          buildInputs = with pkgs; [
+            # Audio dependencies
+            alsa-lib
+
+            # Graphics/Windowing dependencies
+            libxkbcommon
+            wayland
+
+            # X11 dependencies
+            xorg.libX11
+            xorg.libXcursor
+            xorg.libXi
+            xorg.libXrandr
+
+            # Vulkan dependencies
+            vulkan-loader
+
+            # Other common Bevy dependencies
+            udev
+          ];
+
+          packages = defaultAttrs.packages;
+
+          # Set LD_LIBRARY_PATH for runtime linking
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (with pkgs; [
+            alsa-lib
+            libxkbcommon
+            wayland
+            xorg.libX11
+            xorg.libXcursor
+            xorg.libXi
+            xorg.libXrandr
+            vulkan-loader
+            udev
+          ]);
+        });
+
+      in
+      {
+        devShells = { inherit default bevy; };
       }
     );
 }

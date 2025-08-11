@@ -4,7 +4,7 @@ function run_example {
     dir=$1
     pushd $dir
     echo "--------- $dir ------------"
-    cargo runcc -c
+    just run
     popd
 }
 
