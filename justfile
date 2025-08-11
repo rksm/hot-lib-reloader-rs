@@ -14,7 +14,7 @@ lint dir=".":
       cargo clippy --all-features -- -D warnings
 
 fmt dir=".":
-    for dir in $(scripts/rust-crates.py list-workspaces); do \
+    for dir in $(python scripts/rust-crates.py list-workspaces); do \
         just fmt-dir $dir; \
     done
 
@@ -32,7 +32,7 @@ check dir=".": (fmt-check dir) (lint dir) (test dir) readme-check
 check-all:
     #!/usr/bin/env bash
     set -e
-    for dir in $(scripts/rust-crates.py list-workspaces); do
+    for dir in $(python scripts/rust-crates.py list-workspaces); do
         echo "Checking $dir"
         if [[ "$dir" == "examples/bevy" ]] || \
            [[ "$dir" == "examples/hot-egui" ]] || \
@@ -58,7 +58,7 @@ run-minimal-test:
 # Housekeeping
 
 update:
-    for dir in $(scripts/rust-crates.py list-workspaces); do \
+    for dir in $(python scripts/rust-crates.py list-workspaces); do \
         pushd $dir; \
         cargo update; \
         popd; \

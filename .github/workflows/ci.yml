@@ -46,7 +46,7 @@ jobs:
 
     - name: Run clippy
       run: |
-        for dir in $(scripts/rust-crates.py list-workspaces); do
+        for dir in $(python scripts/rust-crates.py list-workspaces); do
           echo "Running clippy in $dir"
           pushd $dir
           cargo clippy --all-features -- -D warnings || exit 1
@@ -58,7 +58,7 @@ jobs:
 
     - name: Run tests
       run: |
-        for dir in $(scripts/rust-crates.py list-workspaces); do
+        for dir in $(python scripts/rust-crates.py list-workspaces); do
           echo "Running tests in $dir"
           pushd $dir
           cargo nextest run --verbose || exit 1
