@@ -41,24 +41,33 @@ jobs:
     - name: Check formatting
       run: cargo fmt --all -- --check
 
+    - name: Readme check
+      run: cargo rdme --check
+
     - name: Run clippy
       # run: cargo clippy --all-features -- -D warnings
-      run: cargo clippy --all-features
+      # run: cargo clippy --all-features
+      run: |
+        for dir in $(scripts/rust-crates.py list-workspaces); do
+          echo "Running clippy in $dir"
+          pushd $dir
+          # cargo clippy --all-features -- -D warnings || exit 1
+          cargo clippy --all-features
+          popd
+        done
 
     - name: Build
       run: cargo build --verbose
 
     - name: Run tests
-      run: cargo nextest run --verbose
-
-    - name: Run doc tests
-      run: cargo test --doc
-
-    - name: Run test for minimal example
-      run: cd examples/minimal && cargo nexttest run --no-capture
-
-    - name: Readme check
-      run: cargo rdme --check
+      run: |
+        for dir in $(scripts/rust-crates.py list-workspaces); do
+          echo "Running tests in $dir"
+          pushd $dir
+          cargo nextest run --verbose || exit 1
+          cargo test --doc --verbose || exit 1
+          popd
+        done
 
   test-on-multiple-os:
     name: Test on ${{ matrix.os }}
@@ -88,7 +97,6 @@ jobs:
 
     - name: install cargo utilities
       run: |
-        cargo binstall cargo-rdme
         cargo binstall cargo-nextest
 
     - name: Build
