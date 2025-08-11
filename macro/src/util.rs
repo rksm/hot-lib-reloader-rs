@@ -1,5 +1,6 @@
-use proc_macro2::Span;
 use std::path::PathBuf;
+
+use proc_macro2::{Span, TokenTree};
 use syn::{Error, ForeignItemFn, LitStr, Result};
 
 pub fn ident_from_pat(
@@ -53,10 +54,25 @@ pub fn read_functions_from_file(
                     let no_mangle = fun
                         .attrs
                         .iter()
-                        .filter_map(|attr| attr.path.get_ident())
+                        .filter_map(|attr| attr.path().get_ident())
                         .any(|ident| *ident == "no_mangle");
 
-                    if !no_mangle {
+                    let unsafe_no_mangle = fun.attrs.iter().any(|attr| {
+                        attr.meta.require_list().is_ok_and(|list| {
+                            list.path
+                                .get_ident()
+                                .is_some_and(|ident| *ident == "unsafe")
+                                && list.tokens.clone().into_iter().any(|token| {
+                                    if let TokenTree::Ident(ident) = token {
+                                        ident == "no_mangle"
+                                    } else {
+                                        false
+                                    }
+                                })
+                        })
+                    });
+
+                    if !no_mangle && !unsafe_no_mangle {
                         continue;
                     };
                 }
