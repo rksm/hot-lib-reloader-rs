@@ -1,8 +1,8 @@
 [package]
 name = "hot-lib-reloader"
-version = "0.7.0"
+version = "0.8.0"
 categories = ["development-tools"]
-edition = "2021"
+edition = "2024"
 exclude = [".dir-locals.el", "DEV.org", "doc/*"]
 homepage = "https://github.com/rksm/hot-lib-reloader-rs"
 keywords = ["hot-reloading", "hot-reload", "autoreload", "live-programming"]
@@ -13,16 +13,16 @@ description = "Utility to reload libraries on change. For faster feedback cycles
 
 [dependencies]
 crc32fast = "1.3.2"
-hot-lib-reloader-macro = { version = "^0.7.0", path = "./macro" }
+hot-lib-reloader-macro = { version = "^0.8.0", path = "./macro" }
 libloading = "^0.8"
 log = "^0.4"
 notify = "^6"
 notify-debouncer-full = "0.3.1"
-thiserror = "1.0.32"
+thiserror = "2.0.12"
 uuid = { version = "1.4.1", features = ["v4"], optional = true }
 
 [dev-dependencies]
-env_logger = "^0.10"
+env_logger = "0.11.8"
 lib_for_testing = { path = "tests/lib_for_testing" }
 
 [workspace]

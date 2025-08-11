@@ -1,6 +1,6 @@
 use std::{
     borrow::BorrowMut,
-    sync::{mpsc, Arc, Condvar, Mutex},
+    sync::{Arc, Condvar, Mutex, mpsc},
     time::Duration,
 };
 

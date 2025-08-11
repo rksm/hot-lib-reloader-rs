@@ -1,14 +1,14 @@
 use quote::ToTokens;
 use syn::LitBool;
 use syn::{
-    spanned::Spanned, token, Attribute, ForeignItemFn, Ident, Item, ItemMacro, LitStr, Macro,
-    Result, Visibility,
+    Attribute, ForeignItemFn, Ident, Item, ItemMacro, LitStr, Macro, Result, Visibility,
+    spanned::Spanned, token,
 };
 
+use super::HotModuleAttribute;
 use super::code_gen::{
     gen_hot_module_function_for, gen_lib_change_subscription_function, generate_lib_loader_items,
 };
-use super::HotModuleAttribute;
 use crate::hot_module::code_gen::{gen_lib_version_function, gen_lib_was_updated_function};
 use crate::util::read_functions_from_file;
 
@@ -105,7 +105,7 @@ impl syn::parse::Parse for HotModule {
                     if func
                         .attrs
                         .iter()
-                        .any(|attr| attr.path.is_ident("lib_change_subscription")) =>
+                        .any(|attr| attr.path().is_ident("lib_change_subscription")) =>
                 {
                     let span = func.span();
                     let f = ForeignItemFn {
@@ -125,7 +125,7 @@ impl syn::parse::Parse for HotModule {
                     if func
                         .attrs
                         .iter()
-                        .any(|attr| attr.path.is_ident("lib_version")) =>
+                        .any(|attr| attr.path().is_ident("lib_version")) =>
                 {
                     let span = func.span();
                     let f = ForeignItemFn {
@@ -145,7 +145,7 @@ impl syn::parse::Parse for HotModule {
                     if func
                         .attrs
                         .iter()
-                        .any(|attr| attr.path.is_ident("lib_updated")) =>
+                        .any(|attr| attr.path().is_ident("lib_updated")) =>
                 {
                     let span = func.span();
                     let f = ForeignItemFn {
@@ -165,7 +165,7 @@ impl syn::parse::Parse for HotModule {
                     if func
                         .attrs
                         .iter()
-                        .any(|attr| attr.path.is_ident("hot_function")) =>
+                        .any(|attr| attr.path().is_ident("hot_function")) =>
                 {
                     let span = func.span();
                     let f = ForeignItemFn {
@@ -187,7 +187,7 @@ impl syn::parse::Parse for HotModule {
                     if foreign_mod
                         .attrs
                         .iter()
-                        .any(|attr| attr.path.is_ident("hot_functions")) =>
+                        .any(|attr| attr.path().is_ident("hot_functions")) =>
                 {
                     for item in foreign_mod.items {
                         match item {

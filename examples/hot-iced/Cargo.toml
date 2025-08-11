@@ -5,7 +5,7 @@ members = ["lib"]
 [package]
 name = "hot-iced"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 hot-lib-reloader = "0.6.2"

@@ -19,7 +19,9 @@ impl CodeSigner {
             .spawn(), Err(err) if err.kind() == ErrorKind::NotFound);
 
         if !found {
-            eprintln!("[hot-lib-reloader] The MacOS `{CODESIGN_BIN}` executable cannot be found. See https://github.com/rksm/hot-lib-reloader-rs/issues/15 for more information for why this is needed. To install the XCode command line tools use brew or see https://mac.install.guide/commandlinetools/ for more options");
+            eprintln!(
+                "[hot-lib-reloader] The MacOS `{CODESIGN_BIN}` executable cannot be found. See https://github.com/rksm/hot-lib-reloader-rs/issues/15 for more information for why this is needed. To install the XCode command line tools use brew or see https://mac.install.guide/commandlinetools/ for more options"
+            );
         }
 
         Self { found }

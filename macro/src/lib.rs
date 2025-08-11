@@ -33,7 +33,7 @@ mod util;
 /// #[hot_module(dylib = "lib")]
 /// mod foo {
 ///
-///   // reads `#[no_mangle]` public functions from `file.rs` and generates
+///   // reads `#[unsafe(no_mangle)]` public functions from `file.rs` and generates
 ///   // forwarding functions in the context of this module that have the exact
 ///   // same signatures. Those generated functions will automatically use the
 ///   // newest version of the library.

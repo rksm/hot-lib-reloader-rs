@@ -7,7 +7,7 @@ pub struct State {
 #[derive(Default, Debug, serde::Deserialize, serde::Serialize)]
 struct InnerState {}
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn step(state: State) -> State {
     let State { version, inner } = state;
 

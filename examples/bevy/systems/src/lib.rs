@@ -2,7 +2,7 @@ mod utilities;
 
 use bevy::{prelude::*, sprite::collide_aabb};
 use components::*;
-use rand::{thread_rng, Rng};
+use rand::{Rng, thread_rng};
 
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
@@ -21,7 +21,7 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         });
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn player_movement_system(
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<(&Player, &mut Transform)>,
@@ -63,7 +63,7 @@ pub fn player_movement_system(
     transform.translation = transform.translation.min(extents).max(-extents);
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn player_shooting_system(
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
@@ -71,24 +71,24 @@ pub fn player_shooting_system(
 ) {
     const SIZE: f32 = 10.0;
 
-    if keyboard_input.just_pressed(KeyCode::Space) {
-        if let Ok(tfm) = query.get_single() {
-            commands
-                .spawn(SpriteBundle {
-                    transform: *tfm,
-                    sprite: Sprite {
-                        color: Color::rgb(0.9, 0.0, 0.0),
-                        custom_size: Some(Vec2::new(SIZE, SIZE)),
-                        ..Default::default()
-                    },
+    if keyboard_input.just_pressed(KeyCode::Space)
+        && let Ok(tfm) = query.get_single()
+    {
+        commands
+            .spawn(SpriteBundle {
+                transform: *tfm,
+                sprite: Sprite {
+                    color: Color::rgb(0.9, 0.0, 0.0),
+                    custom_size: Some(Vec2::new(SIZE, SIZE)),
                     ..Default::default()
-                })
-                .insert(Bullet);
-        }
+                },
+                ..Default::default()
+            })
+            .insert(Bullet);
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn bullet_movement_system(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Transform), With<Bullet>>,
@@ -118,7 +118,7 @@ pub fn bullet_movement_system(
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn bullet_hit_system(
     mut commands: Commands,
     bullet_query: Query<&Transform, With<Bullet>>,
@@ -141,7 +141,7 @@ pub fn bullet_hit_system(
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn spawn_other_ships(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -171,12 +171,12 @@ pub fn spawn_other_ships(
     }
 
     if other_ships_count < MIN_SHIP_COUNT {
-        let x = if thread_rng().gen::<bool>() {
+        let x = if thread_rng().r#gen::<bool>() {
             thread_rng().gen_range(((-screen_size.x) - MARGIN)..(-screen_size.x))
         } else {
             thread_rng().gen_range(screen_size.x..(screen_size.x + MARGIN))
         };
-        let y = if thread_rng().gen::<bool>() {
+        let y = if thread_rng().r#gen::<bool>() {
             thread_rng().gen_range(((-screen_size.y) - MARGIN)..(-screen_size.y))
         } else {
             thread_rng().gen_range(screen_size.y..(screen_size.y + MARGIN))
@@ -195,7 +195,7 @@ pub fn spawn_other_ships(
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn move_other_ships(time: Res<Time>, mut query: Query<&mut Transform, With<OtherShip>>) {
     const SPEED: f32 = 100.0;
     for mut tfm in &mut query {
