@@ -21,7 +21,7 @@ fmt-check dir=".":
     cd {{ dir }} && \
       cargo fmt --all -- --check
 
-check dir=".": (fmt-check dir) (test dir) readme-check
+check dir=".": (fmt-check dir) (lint dir) (test dir) readme-check
 
 check-all:
     #!/usr/bin/env bash

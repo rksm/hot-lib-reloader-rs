@@ -45,14 +45,11 @@ jobs:
       run: cargo rdme --check
 
     - name: Run clippy
-      # run: cargo clippy --all-features -- -D warnings
-      # run: cargo clippy --all-features
       run: |
         for dir in $(scripts/rust-crates.py list-workspaces); do
           echo "Running clippy in $dir"
           pushd $dir
-          # cargo clippy --all-features -- -D warnings || exit 1
-          cargo clippy --all-features
+          cargo clippy --all-features -- -D warnings || exit 1
           popd
         done
 

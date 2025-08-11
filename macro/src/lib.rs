@@ -1,5 +1,4 @@
 mod hot_module;
-mod lib_reloader;
 mod util;
 
 /// This macro is the top-level interface for making a dynamic Rust library
