@@ -55,6 +55,16 @@ run-minimal-test:
 
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Housekeeping
+
+update:
+    for dir in $(scripts/rust-crates.py list-workspaces); do \
+        pushd $dir; \
+        cargo update; \
+        popd; \
+    done
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Release
 
 readme:
