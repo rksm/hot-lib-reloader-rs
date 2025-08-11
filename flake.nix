@@ -50,49 +50,35 @@
         };
         default = pkgs.mkShell defaultAttrs;
 
-        bevy = pkgs.mkShell (defaultAttrs // {
+        # for bevy / egui / iced / nannou
+        gui = pkgs.mkShell (defaultAttrs // rec {
           inputsFrom = [ default ];
 
-          buildInputs = with pkgs; [
-            # Audio dependencies
-            alsa-lib
-
-            # Graphics/Windowing dependencies
-            libxkbcommon
-            wayland
-
-            # X11 dependencies
-            xorg.libX11
-            xorg.libXcursor
-            xorg.libXi
-            xorg.libXrandr
-
-            # Vulkan dependencies
-            vulkan-loader
-
-            # Other common Bevy dependencies
-            udev
+          nativeBuildInputs = with pkgs; [
+            cmake
           ];
 
-          packages = defaultAttrs.packages;
-
-          # Set LD_LIBRARY_PATH for runtime linking
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (with pkgs; [
+          buildInputs = with pkgs; [
             alsa-lib
+            expat
+            fontconfig
+            freetype
+            libGL
             libxkbcommon
-            wayland
+            udev
+            vulkan-loader
+            wayland # To use the wayland feature
             xorg.libX11
             xorg.libXcursor
             xorg.libXi
-            xorg.libXrandr
-            vulkan-loader
-            udev
-          ]);
+            xorg.libXrandr # To use the x11 feature
+          ];
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
         });
 
       in
       {
-        devShells = { inherit default bevy; };
+        devShells = { inherit default gui; };
       }
     );
 }

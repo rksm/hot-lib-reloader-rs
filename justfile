@@ -28,8 +28,18 @@ check-all:
     set -e
     for dir in $(scripts/rust-crates.py list-workspaces); do
         echo "Checking $dir"
+        if [[ "$dir" == "examples/bevy" ]] || \
+           [[ "$dir" == "examples/hot-egui" ]] || \
+           [[ "$dir" == "examples/hot-iced" ]] || \
+           [[ "$dir" == "examples/nannou-vector-field" ]]; then
+            continue
+        fi
         just check $dir
     done
+    nix develop .#gui -c just check examples/bevy
+    nix develop .#gui -c just check examples/hot-egui
+    nix develop .#gui -c just check examples/hot-iced
+    nix develop .#gui -c just check examples/nannou-vector-field
 
 run-minimal:
     cd examples/minimal && just run

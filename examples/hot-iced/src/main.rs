@@ -43,7 +43,7 @@ impl Application for App {
         update(&mut self.state, message)
     }
 
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         view(&self.state)
     }
 }
