@@ -2,7 +2,7 @@
 
 This package tries to adhere to [semver](https://semver.org/).
 
-## [0.8.1]
+## [0.8.2]
 ### Support for compile-time conditional no_mangle
 This adds support for compile-time conditional no_mangle via a #[cfg_attr(feature = "reload", unsafe(no_mangle))] annotation. Via https://github.com/rksm/hot-lib-reloader-rs/pull/50 and https://github.com/rksm/hot-lib-reloader-rs/pull/41. Thank you @SArpnt!
 
