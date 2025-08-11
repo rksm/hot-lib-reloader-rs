@@ -1,5 +1,0 @@
-commands:
-  bin: |
-    cargo run --features reload --target-dir "target-bin"
-  systems: |
-    cargo watch -w systems -w components -x "build -p systems --features dynamic"

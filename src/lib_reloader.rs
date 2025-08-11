@@ -12,9 +12,6 @@ use std::time::Duration;
 
 use crate::error::HotReloaderError;
 
-#[cfg(feature = "verbose")]
-use log;
-
 /// Manages watches a library (dylib) file, loads it using
 /// [`libloading::Library`] and [provides access to its
 /// symbols](LibReloader::get_symbol). When the library changes, [`LibReloader`]
@@ -310,7 +307,7 @@ impl LibReloader {
     /// # Safety
     ///
     /// Users of this API must specify the correct type of the function or variable loaded.
-    pub unsafe fn get_symbol<T>(&self, name: &[u8]) -> Result<Symbol<T>, HotReloaderError> {
+    pub unsafe fn get_symbol<T>(&self, name: &[u8]) -> Result<Symbol<'_, T>, HotReloaderError> {
         match &self.lib {
             None => Err(HotReloaderError::LibraryNotLoaded),
             Some(lib) => Ok(lib.get(name)?),
@@ -321,7 +318,7 @@ impl LibReloader {
     /// crate around
     #[doc(hidden)]
     pub fn log_info(what: impl std::fmt::Display) {
-        log::info!("{}", what);
+        log::info!("{what}");
     }
 }
 

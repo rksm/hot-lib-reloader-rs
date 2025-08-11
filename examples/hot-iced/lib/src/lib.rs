@@ -18,6 +18,12 @@ impl State {
     }
 }
 
+impl Default for State {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[no_mangle]
 pub fn update(state: &mut State, message: Message) -> Command<Message> {
     match message {

@@ -1,6 +1,6 @@
 Hot-reload example for egui.
 
-Run with `cargo runcc -c` or
+Run with `just run` or
 
 ```shell
 cargo run --features reload

@@ -1,3 +1,5 @@
+.DS_Store
+**/.direnv
 target
 target-*
 Cargo.lock
@@ -7,5 +9,5 @@ DEV.org
 /.idea/
 /examples/macro-test.rs
 /examples/input-files/
-.DS_Store
 /scratch.el
+/examples/hot-egui/.envrc

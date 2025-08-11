@@ -1,17 +1,106 @@
-on: [push]
-
 name: CI
 
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
 jobs:
-  build_and_test:
-    name: hot-lib-reloader tests
+  check:
+    name: Check, Lint and Test
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: -- --nocapture
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: Cache cargo dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: cargo-binstall
+      uses: cargo-bins/cargo-binstall@main
+
+    - name: install cargo utilities
+      run: |
+        cargo binstall cargo-rdme
+        cargo binstall cargo-nextest
+
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+    - name: Readme check
+      run: cargo rdme --check
+
+    - name: Run clippy
+      run: |
+        for dir in $(scripts/rust-crates.py list-workspaces); do
+          echo "Running clippy in $dir"
+          pushd $dir
+          cargo clippy --all-features -- -D warnings || exit 1
+          popd
+        done
+
+    - name: Build
+      run: cargo build --verbose
+
+    - name: Run tests
+      run: |
+        for dir in $(scripts/rust-crates.py list-workspaces); do
+          echo "Running tests in $dir"
+          pushd $dir
+          cargo nextest run --verbose || exit 1
+          cargo test --doc --verbose || exit 1
+          popd
+        done
+
+  test-on-multiple-os:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache cargo dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: cargo-binstall
+      uses: cargo-bins/cargo-binstall@main
+
+    - name: install cargo utilities
+      run: |
+        cargo binstall cargo-nextest
+
+    - name: Build
+      run: cargo build --verbose
+
+    - name: Run tests
+      run: cargo nextest run --verbose
+
+    - name: Run test for minimal example
+      run: cd examples/minimal && cargo nextest run --no-capture

@@ -3,5 +3,5 @@ This shows an option to allow to modify types and state freely by using an outer
 Run with:
 
 ```shell
-$ cargo runcc -c
+$ just run
 ```

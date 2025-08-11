@@ -1,5 +1,5 @@
 use proc_macro2::Span;
-use syn::{token, Expr, Path, FnArg, ItemFn, LitByteStr, LitStr, Result, VisPublic, Visibility};
+use syn::{token, Expr, FnArg, ItemFn, LitByteStr, LitStr, Path, Result, VisPublic, Visibility};
 use syn::{ForeignItemFn, LitInt};
 
 use crate::util::ident_from_pat;

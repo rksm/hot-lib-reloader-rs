@@ -53,7 +53,7 @@ impl Drop for BlockReload {
 /// A [`LibReloadObserver`] allows to wait for library changes. See
 /// - [`LibReloadObserver::wait_for_about_to_reload`] and
 /// - [`LibReloadObserver::wait_for_reload`]
-/// for details.
+///   for details.
 ///
 /// You can use those methods individually or in combination. In particular, if you want to serialize state before a library change happens and then deserialize / migrate it when the library update is done, using both methods in combination is quite useful. Something along the lines of:
 ///

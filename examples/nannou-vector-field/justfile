@@ -1,0 +1,7 @@
+default:
+    just --list
+
+run:
+    parallel --line-buffer --halt now,fail=1 ::: \
+      "cargo watch -i lib -x 'run --features reload'" \
+      "cargo watch -w lib -x 'build -p lib'"

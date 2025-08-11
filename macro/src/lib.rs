@@ -1,5 +1,4 @@
 mod hot_module;
-mod lib_reloader;
 mod util;
 
 /// This macro is the top-level interface for making a dynamic Rust library
@@ -7,19 +6,19 @@ mod util;
 /// accompanies that will do several things:
 ///
 /// 1. In the context of that module a global
-/// [`hot_lib_reloader::LibReloader`](https://docs.rs/hot-lib-reloader/latest/hot_lib_reloader/struct.LibReloader.html)
-/// instance is maintained that loads the library specified by the `dylib`
-/// argument and provides access to its symbols.
+///    [`hot_lib_reloader::LibReloader`](https://docs.rs/hot-lib-reloader/latest/hot_lib_reloader/struct.LibReloader.html)
+///    instance is maintained that loads the library specified by the `dylib`
+///    argument and provides access to its symbols.
 ///
 /// 2. A thread is started that drives the `LibReloader`: It waits for library
-/// file changes and then
-/// [updates](https://docs.rs/hot-lib-reloader/latest/hot_lib_reloader/struct.LibReloader.html#method.update)
-/// the library.
+///    file changes and then
+///    [updates](https://docs.rs/hot-lib-reloader/latest/hot_lib_reloader/struct.LibReloader.html#method.update)
+///    the library.
 ///
 /// 3. Allows access to a
-/// [`hot_lib_reloader::LibReloadNotifier`](https://docs.rs/hot-lib-reloader/latest/hot_lib_reloader/struct.LibReloadNotifier.html)
-/// that can be used to get events about library changes. See the
-/// `#[lib_change_subscription]` attribute below.
+///    [`hot_lib_reloader::LibReloadNotifier`](https://docs.rs/hot-lib-reloader/latest/hot_lib_reloader/struct.LibReloadNotifier.html)
+///    that can be used to get events about library changes. See the
+///    `#[lib_change_subscription]` attribute below.
 ///
 /// In addition, the module can contain normal items. You can define functions,
 /// types etc normally and you can import and export from other modules. In
@@ -28,7 +27,7 @@ mod util;
 ///
 /// A few pseudo-macros can appear in the modules context:
 ///
-/// ```
+/// ```ignore
 /// // The `dylib` attribute should be the name of the library to hot-reload,
 /// // typically the crate name.
 /// #[hot_module(dylib = "lib")]

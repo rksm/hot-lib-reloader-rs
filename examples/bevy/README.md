@@ -14,16 +14,12 @@ $ cargo watch -w systems -w components -x "build -p systems --features dynamic"
 $ cargo run --features reload
 ```
 
-Alternatively with a tool like [runcc](https://crates.io/crates/runcc) you can run this as a single commands: `cargo runcc -c`
-
 ## Windows
 
 ```shell
 $ cargo watch -w systems -w components -x "build -p systems --features dynamic"
 $ cargo run --features reload --target-dir "target-bin"
 ```
-
-Alternatively with [runcc](https://crates.io/crates/runcc): `cargo runcc -c runcc-windows.yml`
 
 [Why is this different from Linux / MacOS?](#library-files-on-windows-get-locked-while-the-app-is-running-and-there-is-a-permission-error-when-they-change)
 
