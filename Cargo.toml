@@ -1,6 +1,6 @@
 [package]
 name = "hot-lib-reloader"
-version = "0.7.0"
+version = "0.8.0"
 categories = ["development-tools"]
 edition = "2021"
 exclude = [".dir-locals.el", "DEV.org", "doc/*"]
