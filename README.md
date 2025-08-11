@@ -295,23 +295,27 @@ use lib::*;
 mod hot_lib { /*...*/ }
 ```
 
-### Disable `#[no-mangle]` in release mode
+To run the static version just use `cargo run` the hot reloadable variant with `cargo run --features reload`.
+
+
+#### Disable `#[no-mangle]` in release mode
 
 To not pay a penalty for exposing functions using `#[unsafe(no_mangle)]` in release mode where everything is statically compiled (see previous tip) and no functions need to be exported, there are two options:
 
-#### With a feature flag
+##### With a feature flag
 
 Conditionally use `#[no_mangle]` in your library:
 
 ```rust
-#[cfg_attr(feature = "reload", no_mangle)]
+#[cfg_attr(feature = "reload", unsafe(no_mangle))]
 ```
 
 To run the static version just use `cargo run` the hot reloadable variant with `cargo run --features reload`.
 
-#### Using `no-mangle-if-debug` macro
+##### Using `no-mangle-if-debug` macro
 
 Use the [no-mangle-if-debug attribute macro](./macro-no-mangle-if-debug). It will conditionally disable name mangling, depending on wether you build release or debug mode.
+
 
 ### Use serialization or generic values for changing types
 
