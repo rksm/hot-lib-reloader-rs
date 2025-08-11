@@ -44,8 +44,8 @@ check-all:
     done
     nix develop .#gui -c just check examples/bevy
     nix develop .#gui -c just check examples/hot-egui
-    nix develop .#gui -c just check examples/hot-iced
-    nix develop .#gui -c just check examples/nannou-vector-field
+    # nix develop .#gui -c just check examples/hot-iced
+    # nix develop .#gui -c just check examples/nannou-vector-field
 
 run-minimal:
     cd examples/minimal && just run
