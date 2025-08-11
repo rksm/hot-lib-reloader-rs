@@ -64,10 +64,17 @@ update:
         popd; \
     done
 
-bump:
+bump-master *args="":
+    cargo workspaces version \
+      --no-git-push \
+      --no-individual-tags {{ args }}
+
+bump-in-branch *args="":
     cargo workspaces version \
       --allow-branch $(git rev-parse --abbrev-ref HEAD) \
-      --no-git-tag
+      --no-git-push \
+      --no-global-tag \
+      --no-individual-tags {{ args }}
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Release
